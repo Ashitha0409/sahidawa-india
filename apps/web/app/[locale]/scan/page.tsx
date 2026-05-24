@@ -20,7 +20,6 @@ import {
 import { Link } from "@/i18n/routing";
 import { PageHeader } from "../components/PageHeader";
 import { toast } from "sonner";
-import Footer from "../components/Footer";
 import { ExpiryBadge } from "@/components/scanner/ExpiryBadge";
 import {
     verifyMedicine,
@@ -968,7 +967,6 @@ export default function ScanPage() {
                     </label>
                 </div>
             </div>
-            <Footer />
         </div>
     );
 }
