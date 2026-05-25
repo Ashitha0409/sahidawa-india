@@ -2,6 +2,9 @@ import asyncio
 import json
 import os
 import sys
+from types import SimpleNamespace
+
+import numpy as np
 
 from fastapi.testclient import TestClient
 
@@ -13,28 +16,64 @@ from routers import asr as asr_router
 client = TestClient(app)
 
 
-def test_stream_returns_partial_and_final_events(monkeypatch):
-    responses = iter(
-        [
-            {
-                "transcription": "I have fever",
-                "language": "en",
-                "language_probability": 0.72,
-            },
-            {
-                "transcription": "I have fever and cough",
-                "language": "en",
-                "language_probability": 0.91,
-            },
-        ]
-    )
+class FakeDecoder:
+    def __init__(self, audio_batches):
+        self.audio_batches = list(audio_batches)
+        self.closed = False
+        self.pushed_chunks = []
 
-    monkeypatch.setattr(
-        asr_router,
-        "transcribe_uploaded_bytes",
-        lambda *args, **kwargs: next(responses),
-        raising=False,
-    )
+    def push(self, chunk: bytes):
+        self.pushed_chunks.append(chunk)
+
+    def take_audio(self, timeout_seconds: float = 0.0):
+        if self.audio_batches:
+            return self.audio_batches.pop(0)
+        return np.array([], dtype=np.float32)
+
+    def finish(self, timeout_seconds: float = 0.0):
+        return self.take_audio(timeout_seconds)
+
+    def close(self):
+        self.closed = True
+
+
+class FakeModel:
+    def __init__(self, responses):
+        self.calls = []
+        self.responses = list(responses)
+
+    def transcribe(self, audio, **kwargs):
+        self.calls.append(np.array(audio, copy=True))
+        segments, info = self.responses.pop(0)
+        return segments, info
+
+
+def test_stream_returns_partial_and_final_events(monkeypatch):
+    class FakeStreamingSession:
+        def __init__(self):
+            self.chunk_count = 0
+
+        def append_and_maybe_transcribe(self, chunk, *, mime_type, language):
+            self.chunk_count += 1
+            if self.chunk_count < 2:
+                return None
+            return {
+                "transcript": "I have fever",
+                "language": "en",
+                "languageConfidence": 0.72,
+            }
+
+        def finalize(self, *, mime_type, language):
+            return {
+                "transcript": "I have fever and cough",
+                "language": "en",
+                "languageConfidence": 0.91,
+            }
+
+        def close(self):
+            return None
+
+    monkeypatch.setattr(asr_router, "StreamingAsrSession", FakeStreamingSession)
 
     with client.websocket_connect("/asr/stream?language=en-IN") as websocket:
         websocket.send_text(json.dumps({"type": "start", "mimeType": "audio/webm"}))
@@ -128,3 +167,117 @@ def test_stream_returns_cleanly_on_disconnect_message():
     asyncio.run(asr_router.stream_transcription(websocket))
 
     assert websocket.sent_payloads == [{"type": "ready"}]
+
+
+def test_streaming_session_skips_silent_audio():
+    decoder = FakeDecoder([np.zeros(16000, dtype=np.float32)])
+    model = FakeModel([])
+
+    session = asr_router.StreamingAsrSession(
+        decoder_factory=lambda mime_type: decoder,
+        model_getter=lambda: model,
+        transcribe_interval_seconds=0.0,
+    )
+
+    result = session.append_and_maybe_transcribe(
+        b"silent",
+        mime_type="audio/webm",
+        language="en",
+    )
+
+    assert result is None
+    assert model.calls == []
+
+
+def test_streaming_session_transcribes_bounded_audio_window():
+    decoder = FakeDecoder(
+        [
+            np.ones(16000, dtype=np.float32) * 0.2,
+            np.ones(16000, dtype=np.float32) * 0.2,
+            np.ones(16000, dtype=np.float32) * 0.2,
+            np.ones(16000, dtype=np.float32) * 0.2,
+        ]
+    )
+    model = FakeModel(
+        [
+            (
+                [SimpleNamespace(start=0.0, end=0.4, text="alpha")],
+                SimpleNamespace(language="en", language_probability=0.6),
+            ),
+            (
+                [SimpleNamespace(start=0.6, end=1.0, text="beta")],
+                SimpleNamespace(language="en", language_probability=0.7),
+            ),
+            (
+                [SimpleNamespace(start=1.4, end=1.8, text="gamma")],
+                SimpleNamespace(language="en", language_probability=0.8),
+            ),
+            (
+                [SimpleNamespace(start=1.8, end=2.2, text="delta")],
+                SimpleNamespace(language="en", language_probability=0.9),
+            ),
+        ]
+    )
+
+    session = asr_router.StreamingAsrSession(
+        decoder_factory=lambda mime_type: decoder,
+        model_getter=lambda: model,
+        window_seconds=2.0,
+        commit_lag_seconds=0.5,
+        transcribe_interval_seconds=0.0,
+        min_buffer_seconds=0.0,
+        speech_rms_threshold=0.01,
+    )
+
+    for index in range(4):
+        session.append_and_maybe_transcribe(
+            f"chunk-{index}".encode(),
+            mime_type="audio/webm",
+            language="en",
+        )
+
+    observed_durations = [len(audio) / asr_router.STREAM_SAMPLE_RATE for audio in model.calls]
+
+    assert len(model.calls) == 4
+    assert observed_durations[-1] < 4.0
+    assert max(observed_durations) <= 2.8
+
+
+def test_streaming_session_final_transcript_merges_overlap():
+    decoder = FakeDecoder(
+        [
+            np.ones(16000, dtype=np.float32) * 0.2,
+            np.ones(16000, dtype=np.float32) * 0.2,
+        ]
+    )
+    model = FakeModel(
+        [
+            (
+                [SimpleNamespace(start=0.0, end=0.4, text="I have fever")],
+                SimpleNamespace(language="en", language_probability=0.7),
+            ),
+            (
+                [SimpleNamespace(start=0.3, end=1.0, text="fever and cough")],
+                SimpleNamespace(language="en", language_probability=0.9),
+            ),
+        ]
+    )
+
+    session = asr_router.StreamingAsrSession(
+        decoder_factory=lambda mime_type: decoder,
+        model_getter=lambda: model,
+        transcribe_interval_seconds=0.0,
+        commit_lag_seconds=0.0,
+        min_buffer_seconds=0.0,
+        speech_rms_threshold=0.01,
+    )
+
+    partial = session.append_and_maybe_transcribe(
+        b"chunk-1",
+        mime_type="audio/webm",
+        language="en",
+    )
+    final = session.finalize(mime_type="audio/webm", language="en")
+
+    assert partial["transcript"] == "I have fever"
+    assert final["transcript"] == "I have fever and cough"
