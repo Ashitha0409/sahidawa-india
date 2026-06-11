@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/routing";
+import { Link } from "@/i18n/routing";
 import {
     ArrowLeft,
     ShieldCheck,
@@ -20,7 +20,6 @@ import { getABHAStatus, linkABHA, verifyABHAOTP, unlinkABHA, ABHALink } from "@/
 const ACCESS_TOKEN_KEY = "sb-access-token";
 
 export default function ABHASetupPage() {
-    const router = useRouter();
     const t = useTranslations("abha");
 
     const [isGuest, setIsGuest] = useState(false);

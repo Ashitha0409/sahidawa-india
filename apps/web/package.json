@@ -7,7 +7,7 @@
         "build": "next build --webpack",
         "start": "next start",
         "lint": "eslint .",
-        "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config jest.config.cjs",
+        "test": "cross-env NODE_OPTIONS=\"--experimental-vm-modules\" jest --config jest.config.cjs",
         "test:a11y:voice": "node scripts/voice-a11y-audit.mjs",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
@@ -46,6 +46,7 @@
         "zod": "^4.4.3"
     },
     "devDependencies": {
+        "cross-env": "^7.0.3",
         "@tailwindcss/postcss": "^4.3.0",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",

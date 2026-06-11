@@ -9,6 +9,14 @@ import ProfilePage from "../app/[locale]/profile/page";
 
 const mockPush = jest.fn();
 
+jest.mock("next-intl", () => ({
+    useTranslations: () => (key: string) => key,
+}));
+
+jest.mock("@/lib/api/abha", () => ({
+    getABHAStatus: jest.fn().mockResolvedValue({ linked: false, link: null }),
+}));
+
 jest.mock("@/i18n/routing", () => ({
     Link: ({
         children,

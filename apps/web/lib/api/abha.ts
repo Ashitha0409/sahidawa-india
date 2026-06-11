@@ -12,7 +12,7 @@ function getToken(): string {
                     const session = JSON.parse(sessionStr);
                     return session.access_token || "";
                 }
-            } catch (e) {
+            } catch {
                 return "";
             }
         }
