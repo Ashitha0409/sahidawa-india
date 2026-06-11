@@ -4,8 +4,10 @@ import { abhaService } from "../services/abha-service";
 import { supabase } from "../db/client";
 import { encrypt, decrypt } from "../utils/crypto";
 import logger from "../utils/logger";
+import { abhaLimiter } from "../middleware/rateLimit";
 
 const router = Router();
+router.use(abhaLimiter);
 
 /**
  * GET /api/v1/abha/status

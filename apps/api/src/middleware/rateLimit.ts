@@ -55,3 +55,15 @@ export const lasaLimiter = rateLimit({
         });
     },
 });
+
+export const abhaLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 mins
+    max: process.env.NODE_ENV === "development" ? 500 : 50,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (_req, res) => {
+        res.status(429).json({
+            error: "Too many requests to ABHA services. Please try again later.",
+        });
+    },
+});
