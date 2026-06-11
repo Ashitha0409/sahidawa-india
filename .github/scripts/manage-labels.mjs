@@ -7,29 +7,38 @@ const TARGET_LABELS = {
     "type:docs": { color: "0075ca", description: "Improvements or additions to documentation" },
     "type:testing": { color: "f4d03f", description: "Unit tests, integration tests" },
     "type:security": { color: "b60205", description: "Auth, rate limiting, security" },
-    "type:performance": { color: "8e44ad", description: "Performance optimization or latency improvements" },
+    "type:performance": {
+        color: "8e44ad",
+        description: "Performance optimization or latency improvements",
+    },
     "type:design": { color: "e91e63", description: "UI styling, design layout, animations" },
-    "type:refactor": { color: "3f51b5", description: "Code structure cleanup without behavior change" },
+    "type:refactor": {
+        color: "3f51b5",
+        description: "Code structure cleanup without behavior change",
+    },
     "type:devops": { color: "f9d0c4", description: "CI/CD, Docker, deployment" },
-    "type:accessibility": { color: "008080", description: "Accessibility improvements (ARIA, WCAG)" }
+    "type:accessibility": {
+        color: "008080",
+        description: "Accessibility improvements (ARIA, WCAG)",
+    },
 };
 
 // Map old/duplicate label names to new type: labels
 const DUPLICATE_MAPPING = {
-    "bug": "type:bug",
-    "documentation": "type:docs",
-    "docs": "type:docs",
-    "enhancement": "type:feature",
-    "feature": "type:feature",
-    "testing": "type:testing",
-    "security": "type:security",
-    "performance": "type:performance",
-    "design": "type:design",
-    "refactor": "type:refactor",
-    "devops": "type:devops",
+    bug: "type:bug",
+    documentation: "type:docs",
+    docs: "type:docs",
+    enhancement: "type:feature",
+    feature: "type:feature",
+    testing: "type:testing",
+    security: "type:security",
+    performance: "type:performance",
+    design: "type:design",
+    refactor: "type:refactor",
+    devops: "type:devops",
     "ci-cd": "type:devops",
-    "docker": "type:devops",
-    "accessibility": "type:accessibility"
+    docker: "type:devops",
+    accessibility: "type:accessibility",
 };
 
 function runCmd(cmd) {
@@ -48,21 +57,27 @@ async function main() {
     console.log("📋 Fetching existing labels...");
     const existingLabelsRaw = runCmd("gh label list --json name");
     if (!existingLabelsRaw) {
-        console.error("❌ Failed to list labels. Make sure you are authenticated with GitHub CLI (gh auth status).");
+        console.error(
+            "❌ Failed to list labels. Make sure you are authenticated with GitHub CLI (gh auth status)."
+        );
         process.exit(1);
     }
 
-    const existingLabels = JSON.parse(existingLabelsRaw).map(l => l.name);
+    const existingLabels = JSON.parse(existingLabelsRaw).map((l) => l.name);
     console.log(`Found ${existingLabels.length} existing labels in repo.`);
 
     // 3. Create target type:* labels if they don't exist
     for (const [name, info] of Object.entries(TARGET_LABELS)) {
         if (existingLabels.includes(name)) {
             console.log(`✅ Label "${name}" already exists. Updating details...`);
-            runCmd(`gh label edit "${name}" --color "${info.color}" --description "${info.description}"`);
+            runCmd(
+                `gh label edit "${name}" --color "${info.color}" --description "${info.description}"`
+            );
         } else {
             console.log(`➕ Creating label "${name}"...`);
-            runCmd(`gh label create "${name}" --color "${info.color}" --description "${info.description}"`);
+            runCmd(
+                `gh label create "${name}" --color "${info.color}" --description "${info.description}"`
+            );
         }
     }
 
@@ -82,7 +97,7 @@ async function main() {
         const applicableLabels = new Set();
 
         // Check current labels to map duplicates
-        const currentLabelNames = pr.labels.map(l => l.name);
+        const currentLabelNames = pr.labels.map((l) => l.name);
         for (const labelName of currentLabelNames) {
             if (DUPLICATE_MAPPING[labelName]) {
                 applicableLabels.add(DUPLICATE_MAPPING[labelName]);
@@ -125,20 +140,22 @@ async function main() {
         // If any applicable labels found, assign them to the closed PR
         if (applicableLabels.size > 0) {
             const labelsToAdd = Array.from(applicableLabels);
-            console.log(`🏷️ Labeling PR #${pr.number} ("${pr.title}") with: ${labelsToAdd.join(", ")}`);
-            const labelArgs = labelsToAdd.map(l => `"${l}"`).join(",");
+            console.log(
+                `🏷️ Labeling PR #${pr.number} ("${pr.title}") with: ${labelsToAdd.join(", ")}`
+            );
+            const labelArgs = labelsToAdd.map((l) => `"${l}"`).join(",");
             runCmd(`gh pr edit ${pr.number} --add-label ${labelArgs}`);
         }
     }
 
     // 6. Remove duplicate labels without "type:" prefix
     console.log("🧹 Removing duplicate labels without 'type:' prefix...");
-    const duplicateLabelsToRemove = Object.keys(DUPLICATE_MAPPING).filter(l => l !== "feature"); // avoid deleting custom user definitions unless they match mapping
-    
+    const duplicateLabelsToRemove = Object.keys(DUPLICATE_MAPPING).filter((l) => l !== "feature"); // avoid deleting custom user definitions unless they match mapping
+
     // We fetch again to see which of the old duplicate labels still remain
     const updatedLabelsRaw = runCmd("gh label list --json name");
     if (updatedLabelsRaw) {
-        const currentLabels = JSON.parse(updatedLabelsRaw).map(l => l.name);
+        const currentLabels = JSON.parse(updatedLabelsRaw).map((l) => l.name);
         for (const oldLabel of duplicateLabelsToRemove) {
             if (currentLabels.includes(oldLabel)) {
                 console.log(`🔥 Deleting duplicate label: "${oldLabel}"`);

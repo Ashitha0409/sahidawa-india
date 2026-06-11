@@ -24,7 +24,7 @@ The core changes are confined to the `// ── Environment resolution ───
     if (!process.env.SUPABASE_URL) {
         throw new Error(
             "Missing required environment variable: SUPABASE_URL. " +
-            "Set it in your .env file (e.g. https://<project>.supabase.co)."
+                "Set it in your .env file (e.g. https://<project>.supabase.co)."
         );
     }
     ```
@@ -34,8 +34,8 @@ The core changes are confined to the `// ── Environment resolution ───
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         throw new Error(
             "Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY. " +
-            "The API backend requires the service_role key to bypass RLS for server-side writes. " +
-            "Do not use SUPABASE_ANON_KEY here — it is subject to RLS and will silently drop writes."
+                "The API backend requires the service_role key to bypass RLS for server-side writes. " +
+                "Do not use SUPABASE_ANON_KEY here — it is subject to RLS and will silently drop writes."
         );
     }
     ```
@@ -66,7 +66,7 @@ Should a contributor need to re-implement this feature from scratch, they would 
     if (!process.env.SUPABASE_URL) {
         throw new Error(
             "Missing required environment variable: SUPABASE_URL. " +
-            "Set it in your .env file (e.g. https://<project>.supabase.co)."
+                "Set it in your .env file (e.g. https://<project>.supabase.co)."
         );
     }
     ```
@@ -75,8 +75,8 @@ Should a contributor need to re-implement this feature from scratch, they would 
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         throw new Error(
             "Missing required environment variable: SUPABASE_SERVICE_ROLE_KEY. " +
-            "The API backend requires the service_role key to bypass RLS for server-side writes. " +
-            "Do not use SUPABASE_ANON_KEY here — it is subject to RLS and will silently drop writes."
+                "The API backend requires the service_role key to bypass RLS for server-side writes. " +
+                "Do not use SUPABASE_ANON_KEY here — it is subject to RLS and will silently drop writes."
         );
     }
     ```
@@ -91,20 +91,20 @@ Should a contributor need to re-implement this feature from scratch, they would 
 
 This change significantly enhances the robustness and predictability of our backend API's interaction with Supabase, forming a more reliable foundation for the SahiDawa platform.
 
--   **Enhanced Reliability:** By strictly enforcing the presence of `SUPABASE_SERVICE_ROLE_KEY`, we guarantee that all server-side write operations will correctly bypass RLS. This eliminates the possibility of silent data loss or unexpected permission errors that were previously observed (Issue #893), ensuring the integrity of critical data such as patient records, medicine verification logs, and health platform updates.
--   **Improved Developer Experience:** The explicit and informative error messages provide immediate feedback during development or deployment if essential environment variables are missing. This drastically reduces debugging time and ensures a more consistent and correct setup across all development, staging, and production environments.
--   **Strengthened Security Posture:** While not a direct security vulnerability fix, requiring the `SERVICE_ROLE_KEY` for backend operations reinforces the principle of least privilege. Client-side operations, which typically use the `ANON_KEY`, remain subject to RLS, while privileged backend operations are correctly authenticated to bypass RLS, ensuring appropriate access control.
--   **Solid Foundation for Future Development:** A reliably configured and correctly privileged database client is fundamental to any data-driven application. This fix solidifies the foundation for all future backend features involving data manipulation, ensuring they operate as intended without hidden credential-related issues. It enables us to confidently build out new functionalities for rural health and medicine verification, knowing our core database interactions are robust.
+- **Enhanced Reliability:** By strictly enforcing the presence of `SUPABASE_SERVICE_ROLE_KEY`, we guarantee that all server-side write operations will correctly bypass RLS. This eliminates the possibility of silent data loss or unexpected permission errors that were previously observed (Issue #893), ensuring the integrity of critical data such as patient records, medicine verification logs, and health platform updates.
+- **Improved Developer Experience:** The explicit and informative error messages provide immediate feedback during development or deployment if essential environment variables are missing. This drastically reduces debugging time and ensures a more consistent and correct setup across all development, staging, and production environments.
+- **Strengthened Security Posture:** While not a direct security vulnerability fix, requiring the `SERVICE_ROLE_KEY` for backend operations reinforces the principle of least privilege. Client-side operations, which typically use the `ANON_KEY`, remain subject to RLS, while privileged backend operations are correctly authenticated to bypass RLS, ensuring appropriate access control.
+- **Solid Foundation for Future Development:** A reliably configured and correctly privileged database client is fundamental to any data-driven application. This fix solidifies the foundation for all future backend features involving data manipulation, ensuring they operate as intended without hidden credential-related issues. It enables us to confidently build out new functionalities for rural health and medicine verification, knowing our core database interactions are robust.
 
 ## Testing & Verification
 
 Verification of this change involved both manual and implicit testing:
 
--   **Manual Negative Case Verification:** We manually tested the API's startup behavior by intentionally omitting `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the `.env` file. Our system successfully failed to start, throwing the exact `Error` messages implemented in `apps/api/src/db/client.ts`, confirming the guards are active.
--   **Manual Positive Case Verification:** The API was then started with both `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` correctly configured in the `.env` file. This confirmed that the application initializes successfully and that the Supabase client is correctly instantiated with the service role key, allowing subsequent database operations to proceed without startup errors.
--   **Integration Testing (Implicit):** Existing integration tests for API endpoints that perform write operations implicitly verify the correct configuration. These tests would have failed if the Supabase client was still using the `ANON_KEY` and encountering RLS restrictions, thus providing an indirect confirmation that the `SERVICE_ROLE_KEY` is being used.
--   **Edge Cases Considered:**
-    -   **Missing `SUPABASE_URL`:** Verified that the API fails to start with the specific error message for `SUPABASE_URL`.
-    -   **Missing `SUPABASE_SERVICE_ROLE_KEY`:** Verified that the API fails to start with the specific error message warning against using `SUPABASE_ANON_KEY` for backend writes.
-    -   **`SUPABASE_ANON_KEY` provided instead of `SUPABASE_SERVICE_ROLE_KEY`:** This scenario is now explicitly prevented at startup by the new guard, which strictly requires `SUPABASE_SERVICE_ROLE_KEY`. The system will not proceed if this variable is missing.
--   **Automated Testing:** Not documented in this PR if specific unit tests were added to directly test the environment variable validation logic. However, the `type:testing` label indicates that testing was a part of this change.
+- **Manual Negative Case Verification:** We manually tested the API's startup behavior by intentionally omitting `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` from the `.env` file. Our system successfully failed to start, throwing the exact `Error` messages implemented in `apps/api/src/db/client.ts`, confirming the guards are active.
+- **Manual Positive Case Verification:** The API was then started with both `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` correctly configured in the `.env` file. This confirmed that the application initializes successfully and that the Supabase client is correctly instantiated with the service role key, allowing subsequent database operations to proceed without startup errors.
+- **Integration Testing (Implicit):** Existing integration tests for API endpoints that perform write operations implicitly verify the correct configuration. These tests would have failed if the Supabase client was still using the `ANON_KEY` and encountering RLS restrictions, thus providing an indirect confirmation that the `SERVICE_ROLE_KEY` is being used.
+- **Edge Cases Considered:**
+    - **Missing `SUPABASE_URL`:** Verified that the API fails to start with the specific error message for `SUPABASE_URL`.
+    - **Missing `SUPABASE_SERVICE_ROLE_KEY`:** Verified that the API fails to start with the specific error message warning against using `SUPABASE_ANON_KEY` for backend writes.
+    - **`SUPABASE_ANON_KEY` provided instead of `SUPABASE_SERVICE_ROLE_KEY`:** This scenario is now explicitly prevented at startup by the new guard, which strictly requires `SUPABASE_SERVICE_ROLE_KEY`. The system will not proceed if this variable is missing.
+- **Automated Testing:** Not documented in this PR if specific unit tests were added to directly test the environment variable validation logic. However, the `type:testing` label indicates that testing was a part of this change.

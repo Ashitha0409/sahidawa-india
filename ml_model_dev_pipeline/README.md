@@ -1,9 +1,11 @@
 ## ML Model Dev Pipeline
 
 setup -
+
 ```bash
-pip install -r requirements.txt 
+pip install -r requirements.txt
 ```
+
 ### Pretraining
 
 - Notebook: [pre_train_exp.ipynb](pre_train_exp.ipynb)
@@ -16,4 +18,3 @@ pip install -r requirements.txt
 
 - script: [fine_tune_cloud.py](fine_tune_cloud.py)
 - TODO: implement fine-tuning on the custom Cloudinary dataset
-

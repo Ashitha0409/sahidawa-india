@@ -59,13 +59,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **i18n Foundation** — `next-intl` setup with English (`en.json`) as the base language; scaffold for 22 Indian scheduled languages
 - **GitHub Actions CI Pipeline** — Automated lint, build, and test runs on every PR targeting `main`
 - **Community & Contribution Setup**
-  - `README.md` with full architecture diagram, tech stack, and project roadmap
-  - `CONTRIBUTING.md` with detailed contribution workflow, coding standards, and GSSoC 2026 guidelines
-  - `CODE_OF_CONDUCT.md`
-  - `SETUPGUIDE.MD` for maintainer and contributor onboarding
-  - `.github/ISSUE_TEMPLATE/` — bug report and feature request templates
-  - `.github/PULL_REQUEST_TEMPLATE.md`
-  - `.env.example` with all required environment variables documented
+    - `README.md` with full architecture diagram, tech stack, and project roadmap
+    - `CONTRIBUTING.md` with detailed contribution workflow, coding standards, and GSSoC 2026 guidelines
+    - `CODE_OF_CONDUCT.md`
+    - `SETUPGUIDE.MD` for maintainer and contributor onboarding
+    - `.github/ISSUE_TEMPLATE/` — bug report and feature request templates
+    - `.github/PULL_REQUEST_TEMPLATE.md`
+    - `.env.example` with all required environment variables documented
 - **Data Seeds** — Initial `data/seeds/medicines.csv` structure for CDSCO drug database seeding
 - **Shared TypeScript Types** — `packages/shared/src/types.ts` for cross-service type safety
 - **Documentation** — Initial `docs/` folder with architecture, API reference, codebase map, local setup guide, and ETL pipeline documentation
@@ -87,4 +87,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-*Built with ❤️ for 1.4 billion Indians — because healthcare is a right, not a privilege.*
+_Built with ❤️ for 1.4 billion Indians — because healthcare is a right, not a privilege._

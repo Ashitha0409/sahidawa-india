@@ -28,46 +28,47 @@ Prior to this PR, our platform lacked a direct, visual mechanism for users to lo
 **Backend Implementation:**
 
 1.  **Database Migration (`apps/api/src/db/migrations/001_map_tables.sql`):**
-    *   We enabled the `postgis` extension in PostgreSQL to provide spatial data types and functions.
-    *   Two new tables were created:
-        *   `pharmacies`: Stores pharmacy details including `name`, `type` (`Jan Aushadhi` or `private`), `lat`, `lng`, `address`, `district`, `state`, and `verified` status. A `location` column of type `GEOGRAPHY(POINT, 4326)` is `GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) STORED` to automatically create a PostGIS point from `lat`/`lng` for spatial indexing.
-        *   `asha_workers`: Stores ASHA worker details including `name`, `district`, `lat`, `lng`, and `contact`. It also includes a `location` column generated similarly to `pharmacies`.
-    *   GIST indexes were added to the `location` columns of both tables (`CREATE INDEX ON pharmacies USING GIST(location);` and `CREATE INDEX ON asha_workers USING GIST(location);`) to optimize spatial queries, particularly `ST_DWithin`.
-    *   Two SQL stored functions were defined:
-        *   `get_nearby_pharmacies(user_lat DOUBLE PRECISION, user_lng DOUBLE PRECISION, radius_m DOUBLE PRECISION)`: This function queries the `pharmacies` table, returning all pharmacies within `radius_m` of the given `user_lat` and `user_lng`. It calculates and returns the `distance_km` from the user.
-        *   `get_nearby_asha_workers(...)`: A similar function for querying `asha_workers`.
+    - We enabled the `postgis` extension in PostgreSQL to provide spatial data types and functions.
+    - Two new tables were created:
+        - `pharmacies`: Stores pharmacy details including `name`, `type` (`Jan Aushadhi` or `private`), `lat`, `lng`, `address`, `district`, `state`, and `verified` status. A `location` column of type `GEOGRAPHY(POINT, 4326)` is `GENERATED ALWAYS AS (ST_SetSRID(ST_MakePoint(lng, lat), 4326)::geography) STORED` to automatically create a PostGIS point from `lat`/`lng` for spatial indexing.
+        - `asha_workers`: Stores ASHA worker details including `name`, `district`, `lat`, `lng`, and `contact`. It also includes a `location` column generated similarly to `pharmacies`.
+    - GIST indexes were added to the `location` columns of both tables (`CREATE INDEX ON pharmacies USING GIST(location);` and `CREATE INDEX ON asha_workers USING GIST(location);`) to optimize spatial queries, particularly `ST_DWithin`.
+    - Two SQL stored functions were defined:
+        - `get_nearby_pharmacies(user_lat DOUBLE PRECISION, user_lng DOUBLE PRECISION, radius_m DOUBLE PRECISION)`: This function queries the `pharmacies` table, returning all pharmacies within `radius_m` of the given `user_lat` and `user_lng`. It calculates and returns the `distance_km` from the user.
+        - `get_nearby_asha_workers(...)`: A similar function for querying `asha_workers`.
 2.  **API Route (`apps/api/src/routes/map.ts`):**
-    *   A new Express `Router` was created to handle map-related API requests.
-    *   The `GET /api/map/nearby` endpoint was implemented to serve nearby pharmacy and ASHA worker data.
-    *   It expects `lat` and `lng` as required query parameters and an optional `radius_km` (defaulting to 10 km).
-    *   Input validation ensures `lat` and `lng` are valid numbers.
-    *   It uses `Promise.all` to concurrently call the `get_nearby_pharmacies` and `get_nearby_asha_workers` stored functions via `supabase.rpc()`. The `radius_km` parameter is converted to meters for the `radius_m` argument of the SQL functions.
-    *   The endpoint responds with a JSON object containing `pharmacies` and `asha_workers` arrays.
+    - A new Express `Router` was created to handle map-related API requests.
+    - The `GET /api/map/nearby` endpoint was implemented to serve nearby pharmacy and ASHA worker data.
+    - It expects `lat` and `lng` as required query parameters and an optional `radius_km` (defaulting to 10 km).
+    - Input validation ensures `lat` and `lng` are valid numbers.
+    - It uses `Promise.all` to concurrently call the `get_nearby_pharmacies` and `get_nearby_asha_workers` stored functions via `supabase.rpc()`. The `radius_km` parameter is converted to meters for the `radius_m` argument of the SQL functions.
+    - The endpoint responds with a JSON object containing `pharmacies` and `asha_workers` arrays.
 3.  **API Integration (`apps/api/src/app.ts`):**
-    *   The new `mapRouter` was imported and integrated into our main Express application by adding `app.use('/api/map', mapRouter);`, making the `/api/map/nearby` endpoint accessible under the `/api/map` base path.
+    - The new `mapRouter` was imported and integrated into our main Express application by adding `app.use('/api/map', mapRouter);`, making the `/api/map/nearby` endpoint accessible under the `/api/map` base path.
 
 **Frontend Implementation:**
 
 1.  **`MapView.tsx` Component (`apps/web/components/map/MapView.tsx`):**
-    *   This is a new React component responsible for rendering the interactive map.
-    *   It uses `next/dynamic` with `ssr: false` for all `react-leaflet` components (`MapContainer`, `TileLayer`, `Marker`, `Popup`). This ensures these browser-dependent components are only loaded and executed client-side, preventing server-side rendering errors.
-    *   It imports `leaflet/dist/leaflet.css` for map styling.
-    *   Custom `L.icon` instances (`greenIcon` and `blueIcon`) are defined using direct URLs to marker images. This addresses common issues with default Leaflet marker icons not displaying correctly in Webpack builds and provides distinct visual cues for pharmacies and ASHA workers.
-    *   **State Management:** `userLocation` (for map centering), `pharmacies`, `ashaWorkers` (for fetched data), `showPharmacies`, `showAsha` (for filter toggles), and `loading` are managed using `useState`.
-    *   **Geolocation and Data Fetching:** A `useEffect` hook handles initial setup:
-        *   It attempts to get the user's current position using `navigator.geolocation.getCurrentPosition`.
-        *   If successful, it sets `userLocation` and fetches nearby data from `/api/map/nearby` using the obtained coordinates.
-        *   If geolocation fails or is denied, it falls back to a default location (Pune: `[18.5204, 73.8567]`) and fetches data for that location.
-        *   The fetched data populates the `pharmacies` and `ashaWorkers` states.
-    *   **Rendering:** The component renders filter buttons to toggle the visibility of pharmacy and ASHA worker markers. The `MapContainer` displays OpenStreetMap tiles, and `Marker` components are rendered for each fetched pharmacy and ASHA worker, each with a `Popup` showing relevant details like name, type, address, contact, and distance.
+    - This is a new React component responsible for rendering the interactive map.
+    - It uses `next/dynamic` with `ssr: false` for all `react-leaflet` components (`MapContainer`, `TileLayer`, `Marker`, `Popup`). This ensures these browser-dependent components are only loaded and executed client-side, preventing server-side rendering errors.
+    - It imports `leaflet/dist/leaflet.css` for map styling.
+    - Custom `L.icon` instances (`greenIcon` and `blueIcon`) are defined using direct URLs to marker images. This addresses common issues with default Leaflet marker icons not displaying correctly in Webpack builds and provides distinct visual cues for pharmacies and ASHA workers.
+    - **State Management:** `userLocation` (for map centering), `pharmacies`, `ashaWorkers` (for fetched data), `showPharmacies`, `showAsha` (for filter toggles), and `loading` are managed using `useState`.
+    - **Geolocation and Data Fetching:** A `useEffect` hook handles initial setup:
+        - It attempts to get the user's current position using `navigator.geolocation.getCurrentPosition`.
+        - If successful, it sets `userLocation` and fetches nearby data from `/api/map/nearby` using the obtained coordinates.
+        - If geolocation fails or is denied, it falls back to a default location (Pune: `[18.5204, 73.8567]`) and fetches data for that location.
+        - The fetched data populates the `pharmacies` and `ashaWorkers` states.
+    - **Rendering:** The component renders filter buttons to toggle the visibility of pharmacy and ASHA worker markers. The `MapContainer` displays OpenStreetMap tiles, and `Marker` components are rendered for each fetched pharmacy and ASHA worker, each with a `Popup` showing relevant details like name, type, address, contact, and distance.
 2.  **Page Integration (`apps/web/app/[locale]/map/page.tsx`):**
-    *   The `MapView` component is imported and rendered within the existing `PharmacyMapPage` component. This integrates the new interactive map into the dedicated map page, enhancing its functionality.
+    - The `MapView` component is imported and rendered within the existing `PharmacyMapPage` component. This integrates the new interactive map into the dedicated map page, enhancing its functionality.
 3.  **Testing Mocks (`apps/web/jest.config.cjs`, `apps/web/tests/mocks/leaflet.ts`, `apps/web/tests/mocks/react-leaflet.ts`):**
-    *   `apps/web/jest.config.cjs` was updated to include `moduleNameMapper` configurations. These mappings redirect imports for `leaflet` and `react-leaflet` to mock files (`<rootDir>/tests/mocks/leaflet.ts` and `<rootDir>/tests/mocks/react-leaflet.ts`) during Jest test runs.
-    *   These mock files provide minimal, non-functional exports for Leaflet and React-Leaflet modules, allowing our Jest tests to execute successfully in a Node.js environment without encountering errors from browser-specific Leaflet code.
+    - `apps/web/jest.config.cjs` was updated to include `moduleNameMapper` configurations. These mappings redirect imports for `leaflet` and `react-leaflet` to mock files (`<rootDir>/tests/mocks/leaflet.ts` and `<rootDir>/tests/mocks/react-leaflet.ts`) during Jest test runs.
+    - These mock files provide minimal, non-functional exports for Leaflet and React-Leaflet modules, allowing our Jest tests to execute successfully in a Node.js environment without encountering errors from browser-specific Leaflet code.
 
 **Data Seeding:**
-*   `data/seeds/map_seed.sql`: Not documented in this PR, but implies the addition of initial data for the new `pharmacies` and `asha_workers` tables to facilitate development and testing.
+
+- `data/seeds/map_seed.sql`: Not documented in this PR, but implies the addition of initial data for the new `pharmacies` and `asha_workers` tables to facilitate development and testing.
 
 ## Technical Decisions
 
@@ -83,49 +84,50 @@ Prior to this PR, our platform lacked a direct, visual mechanism for users to lo
 To re-implement the Pharmacy & ASHA Worker Map feature from scratch, a contributor would follow these steps:
 
 1.  **Database Schema and Spatial Functions (PostgreSQL with PostGIS):**
-    *   Ensure the `postgis` extension is enabled in your PostgreSQL database.
-    *   Create the `pharmacies` and `asha_workers` tables, including the `GEOGRAPHY(POINT, 4326)` `location` column generated from `lat` and `lng`, as detailed in `apps/api/src/db/migrations/001_map_tables.sql`.
-    *   Add GIST indexes to the `location` columns of both tables for optimal spatial query performance.
-    *   Define the `get_nearby_pharmacies` and `get_nearby_asha_workers` SQL stored functions, which perform `ST_DWithin` queries and calculate `distance_km`, as provided in the migration file.
-    *   Populate these tables with sample data (e.g., using `INSERT` statements or a seed script like `data/seeds/map_seed.sql`).
+    - Ensure the `postgis` extension is enabled in your PostgreSQL database.
+    - Create the `pharmacies` and `asha_workers` tables, including the `GEOGRAPHY(POINT, 4326)` `location` column generated from `lat` and `lng`, as detailed in `apps/api/src/db/migrations/001_map_tables.sql`.
+    - Add GIST indexes to the `location` columns of both tables for optimal spatial query performance.
+    - Define the `get_nearby_pharmacies` and `get_nearby_asha_workers` SQL stored functions, which perform `ST_DWithin` queries and calculate `distance_km`, as provided in the migration file.
+    - Populate these tables with sample data (e.g., using `INSERT` statements or a seed script like `data/seeds/map_seed.sql`).
 
 2.  **Backend API Endpoint (Express.js & Supabase):**
-    *   Create a new file, `apps/api/src/routes/map.ts`.
-    *   Define an Express `Router` and implement a `GET /nearby` endpoint.
-    *   This endpoint should parse `lat`, `lng`, and `radius_km` from query parameters.
-    *   Perform input validation for `lat` and `lng`.
-    *   Use `Promise.all` to execute `supabase.rpc('get_nearby_pharmacies', { user_lat, user_lng, radius_m: radius_km * 1000 })` and `supabase.rpc('get_nearby_asha_workers', { user_lat, user_lng, radius_m: radius_km * 1000 })`.
-    *   Return the results as a JSON object: `{ pharmacies: data, asha_workers: data }`.
-    *   In `apps/api/src/app.ts`, import `mapRouter` and register it with `app.use('/api/map', mapRouter);`.
+    - Create a new file, `apps/api/src/routes/map.ts`.
+    - Define an Express `Router` and implement a `GET /nearby` endpoint.
+    - This endpoint should parse `lat`, `lng`, and `radius_km` from query parameters.
+    - Perform input validation for `lat` and `lng`.
+    - Use `Promise.all` to execute `supabase.rpc('get_nearby_pharmacies', { user_lat, user_lng, radius_m: radius_km * 1000 })` and `supabase.rpc('get_nearby_asha_workers', { user_lat, user_lng, radius_m: radius_km * 1000 })`.
+    - Return the results as a JSON object: `{ pharmacies: data, asha_workers: data }`.
+    - In `apps/api/src/app.ts`, import `mapRouter` and register it with `app.use('/api/map', mapRouter);`.
 
 3.  **Frontend Map Component (Next.js & React-Leaflet):**
-    *   Install `leaflet` and `react-leaflet` packages: `npm install leaflet react-leaflet`.
-    *   Create `apps/web/components/map/MapView.tsx`.
-    *   Import `MapContainer`, `TileLayer`, `Marker`, and `Popup` using `next/dynamic` with `ssr: false` to ensure client-side rendering.
-    *   Import Leaflet's CSS: `import 'leaflet/dist/leaflet.css';`.
-    *   Define custom `L.icon` objects for pharmacy (green) and ASHA worker (blue) markers, specifying `iconUrl`, `shadowUrl`, `iconSize`, and `iconAnchor`.
-    *   Implement a `useEffect` hook to:
-        *   Attempt to get the user's current location using `navigator.geolocation.getCurrentPosition`.
-        *   On success, set the `userLocation` state and `fetch` data from `/api/map/nearby` using the obtained coordinates.
-        *   On failure (e.g., permission denied), set a fallback `userLocation` (e.g., Pune) and fetch data for that location.
-        *   Update `pharmacies` and `ashaWorkers` states with the fetched data.
-    *   Render filter buttons to toggle the `showPharmacies` and `showAsha` states.
-    *   Render the `MapContainer` centered on `userLocation` with an `TileLayer` pointing to OpenStreetMap.
-    *   Conditionally render `Marker` components for each pharmacy and ASHA worker, using their respective custom icons and including `Popup` components to display details.
+    - Install `leaflet` and `react-leaflet` packages: `npm install leaflet react-leaflet`.
+    - Create `apps/web/components/map/MapView.tsx`.
+    - Import `MapContainer`, `TileLayer`, `Marker`, and `Popup` using `next/dynamic` with `ssr: false` to ensure client-side rendering.
+    - Import Leaflet's CSS: `import 'leaflet/dist/leaflet.css';`.
+    - Define custom `L.icon` objects for pharmacy (green) and ASHA worker (blue) markers, specifying `iconUrl`, `shadowUrl`, `iconSize`, and `iconAnchor`.
+    - Implement a `useEffect` hook to:
+        - Attempt to get the user's current location using `navigator.geolocation.getCurrentPosition`.
+        - On success, set the `userLocation` state and `fetch` data from `/api/map/nearby` using the obtained coordinates.
+        - On failure (e.g., permission denied), set a fallback `userLocation` (e.g., Pune) and fetch data for that location.
+        - Update `pharmacies` and `ashaWorkers` states with the fetched data.
+    - Render filter buttons to toggle the `showPharmacies` and `showAsha` states.
+    - Render the `MapContainer` centered on `userLocation` with an `TileLayer` pointing to OpenStreetMap.
+    - Conditionally render `Marker` components for each pharmacy and ASHA worker, using their respective custom icons and including `Popup` components to display details.
 
 4.  **Page Integration:**
-    *   In `apps/web/app/[locale]/map/page.tsx`, import the `MapView` component.
-    *   Embed `<MapView />` within the page's JSX structure.
+    - In `apps/web/app/[locale]/map/page.tsx`, import the `MapView` component.
+    - Embed `<MapView />` within the page's JSX structure.
 
 5.  **Jest Testing Mocks:**
-    *   Create mock files: `apps/web/tests/mocks/leaflet.ts` and `apps/web/tests/mocks/react-leaflet.ts`. These files should export minimal, non-functional stubs for the modules (e.g., `export const MapContainer = () => null;`).
-    *   Update `apps/web/jest.config.cjs` to include `moduleNameMapper` entries that redirect `^leaflet$` and `^react-leaflet$` imports to these mock files during test execution.
+    - Create mock files: `apps/web/tests/mocks/leaflet.ts` and `apps/web/tests/mocks/react-leaflet.ts`. These files should export minimal, non-functional stubs for the modules (e.g., `export const MapContainer = () => null;`).
+    - Update `apps/web/jest.config.cjs` to include `moduleNameMapper` entries that redirect `^leaflet$` and `^react-leaflet$` imports to these mock files during test execution.
 
 **Key Gotchas:**
-*   **SSR Compatibility:** Always use `next/dynamic` with `ssr: false` for Leaflet/React-Leaflet components in Next.js.
-*   **Marker Icon Paths:** Leaflet's default marker icons often break in modern build environments; explicitly defining `L.icon` with full URLs is a robust solution.
-*   **Geolocation Fallback:** Implement a fallback mechanism for `navigator.geolocation.getCurrentPosition` in case of user denial or browser limitations.
-*   **Database Schema:** Ensure `postgis` is enabled and spatial indexes are created for performance.
+
+- **SSR Compatibility:** Always use `next/dynamic` with `ssr: false` for Leaflet/React-Leaflet components in Next.js.
+- **Marker Icon Paths:** Leaflet's default marker icons often break in modern build environments; explicitly defining `L.icon` with full URLs is a robust solution.
+- **Geolocation Fallback:** Implement a fallback mechanism for `navigator.geolocation.getCurrentPosition` in case of user denial or browser limitations.
+- **Database Schema:** Ensure `postgis` is enabled and spatial indexes are created for performance.
 
 ## Impact on System Architecture
 
@@ -144,16 +146,17 @@ The implementation of the Pharmacy & ASHA Worker Map feature underwent thorough 
 
 1.  **Local Environment Validation:** We ran the full SahiDawa project locally, confirming that the map page at `http://localhost:3000/en/map` rendered without errors and displayed the map interface as expected.
 2.  **Visual and Functional Verification:**
-    *   The map was visually inspected to ensure OpenStreetMap tiles loaded correctly.
-    *   Pharmacy markers (green) and ASHA worker markers (blue) were verified to appear at their respective geographical coordinates.
-    *   Clicking on individual markers was confirmed to open popups displaying accurate and relevant details (e.g., pharmacy name, type, address, distance; ASHA worker name, district, contact, distance).
-    *   The filter toggles ("🟢 Pharmacies" and "🔵 ASHA Workers") were tested to correctly show and hide the corresponding marker types on the map.
-    *   Browser geolocation functionality was tested to ensure the map automatically centered on the user's current location and fetched nearby data. The fallback mechanism to a default location (Pune) was also implicitly verified when geolocation was denied or unavailable.
+    - The map was visually inspected to ensure OpenStreetMap tiles loaded correctly.
+    - Pharmacy markers (green) and ASHA worker markers (blue) were verified to appear at their respective geographical coordinates.
+    - Clicking on individual markers was confirmed to open popups displaying accurate and relevant details (e.g., pharmacy name, type, address, distance; ASHA worker name, district, contact, distance).
+    - The filter toggles ("🟢 Pharmacies" and "🔵 ASHA Workers") were tested to correctly show and hide the corresponding marker types on the map.
+    - Browser geolocation functionality was tested to ensure the map automatically centered on the user's current location and fetched nearby data. The fallback mechanism to a default location (Pune) was also implicitly verified when geolocation was denied or unavailable.
 3.  **API Endpoint Verification:** The frontend's successful interaction with the `/api/map/nearby` endpoint implicitly verified its functionality, ensuring it correctly processed `lat`, `lng`, and `radius_km` parameters and returned structured JSON data for nearby pharmacies and ASHA workers.
 4.  **TypeScript Compliance:** The command `npx tsc --noEmit` was executed, confirming that there were zero TypeScript errors across the codebase, ensuring type safety and code quality.
 5.  **CI Stability:** The addition of Jest mocks for `leaflet` and `react-leaflet` in `apps/web/jest.config.cjs` specifically addressed and resolved previous CI test failures related to these libraries. This ensures that our automated tests can run reliably in a Node.js environment without requiring a full browser, maintaining the integrity and efficiency of our CI pipeline.
 
 **Edge Cases Considered:**
-*   **Geolocation Failure/Denial:** Handled by falling back to a default central Indian location (Pune) to ensure the map is always functional.
-*   **No Nearby Data:** The map gracefully handles cases where the API returns empty lists for pharmacies or ASHA workers by simply not displaying any markers for those categories.
-*   **Invalid API Parameters:** The backend API endpoint includes validation for `lat` and `lng` to prevent malformed requests.
+
+- **Geolocation Failure/Denial:** Handled by falling back to a default central Indian location (Pune) to ensure the map is always functional.
+- **No Nearby Data:** The map gracefully handles cases where the API returns empty lists for pharmacies or ASHA workers by simply not displaying any markers for those categories.
+- **Invalid API Parameters:** The backend API endpoint includes validation for `lat` and `lng` to prevent malformed requests.

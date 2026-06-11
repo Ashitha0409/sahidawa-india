@@ -188,7 +188,7 @@ jobs:
                         repo: context.repo.repo,
                         body: message
                       });
-                      
+
                       // Add 'shoutout:published' label to prevent duplicate triggers
                       await github.rest.issues.addLabels({
                         issue_number: pr.number,

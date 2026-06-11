@@ -363,45 +363,50 @@ export default function VoiceTriagePage() {
         return () => window.clearTimeout(focusTimer);
     }, [error, result, step, t]);
 
-    const handleEscapeShortcut = useCallback((event: KeyboardEvent) => {
-        if (event.key !== "Escape") {
-            return;
-        }
-        
-        const activeElement =
-            typeof document !== "undefined" ? (document.activeElement as HTMLElement | null) : null;
-        const activeWithinVoiceRegion = Boolean(
-            activeElement && mainRef.current?.contains(activeElement)
-        );
+    const handleEscapeShortcut = useCallback(
+        (event: KeyboardEvent) => {
+            if (event.key !== "Escape") {
+                return;
+            }
 
-        if (
-            !shouldHandleVoiceEscape({
-                activeElementTagName: activeElement?.tagName,
-                activeWithinVoiceRegion,
-                isSpeaking,
-                step,
-            })
-        ) {
-            return;
-        }
+            const activeElement =
+                typeof document !== "undefined"
+                    ? (document.activeElement as HTMLElement | null)
+                    : null;
+            const activeWithinVoiceRegion = Boolean(
+                activeElement && mainRef.current?.contains(activeElement)
+            );
 
-        if (isSpeaking) {
-            event.preventDefault();
-            handleStopSpeaking();
-            return;
-        }
+            if (
+                !shouldHandleVoiceEscape({
+                    activeElementTagName: activeElement?.tagName,
+                    activeWithinVoiceRegion,
+                    isSpeaking,
+                    step,
+                })
+            ) {
+                return;
+            }
 
-        if (step === "listening") {
-            event.preventDefault();
-            stopListening();
-            return;
-        }
+            if (isSpeaking) {
+                event.preventDefault();
+                handleStopSpeaking();
+                return;
+            }
 
-        if (step === "review" || step === "error" || step === "result") {
-            event.preventDefault();
-            resetFlow();
-        }
-    }, [isSpeaking, step, handleStopSpeaking, stopListening, resetFlow]);
+            if (step === "listening") {
+                event.preventDefault();
+                stopListening();
+                return;
+            }
+
+            if (step === "review" || step === "error" || step === "result") {
+                event.preventDefault();
+                resetFlow();
+            }
+        },
+        [isSpeaking, step, handleStopSpeaking, stopListening, resetFlow]
+    );
 
     useEffect(() => {
         if (typeof window === "undefined") {

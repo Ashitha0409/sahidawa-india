@@ -36,7 +36,9 @@ import {
 import LasaConfirmation from "@/components/scanner/LasaConfirmation";
 import GenericAlternativeCard from "@/components/GenericAlternativeCard";
 import { fetchGenericAlternatives } from "@/lib/api/alternatives";
+import { getABHAStatus, uploadVerificationToABHA } from "@/lib/api/abha";
 import { BarcodeScanner } from "@/components/scanner/BarcodeScanner";
+import { Loader2 } from "lucide-react";
 import LazyImage from "@/components/LazyImage";
 import Tesseract from "tesseract.js";
 import {
@@ -489,9 +491,13 @@ function ResultActions({
 
 export default function ScanPage() {
     const tScan = useTranslations("Scan");
+    const tABHA = useTranslations("abha");
     // Add these near the top of your component, inside the main function
     const [isVerifying, setIsVerifying] = useState(false);
     const [apiError, setApiError] = useState<string | null>(null);
+    const [abhaLinked, setAbhaLinked] = useState(false);
+    const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+    const [abhaError, setAbhaError] = useState<string | null>(null);
     const { isOffline, registerRetryCallback, unregisterRetryCallback } = useOfflineStatus();
     const abortControllerRef = useRef<AbortController | null>(null);
     const isMountedRef = useRef(true);
@@ -542,6 +548,16 @@ export default function ScanPage() {
     }, [showResult, verifyError, batchInput, registerRetryCallback, unregisterRetryCallback]);
 
     useEffect(() => {
+        const token = localStorage.getItem("sb-access-token");
+        if (token) {
+            getABHAStatus()
+                .then((data) => {
+                    setAbhaLinked(data.linked);
+                })
+                .catch((err) => {
+                    console.error("Failed to load ABHA status", err);
+                });
+        }
         return () => {
             console.log("Tesseract worker terminated on ScanPage unmount");
             if (ocrWorkerRef.current) {
@@ -742,6 +758,8 @@ export default function ScanPage() {
             setShowResult(false);
             setVerifyResult(null);
             setVerifyError(null);
+            setSaveState("idle");
+            setAbhaError(null);
 
             try {
                 const result = await verifyMedicine(normalizedBatch, controller.signal);
@@ -852,6 +870,8 @@ export default function ScanPage() {
         setVerifyError(null);
         setOcrText(null);
         setOcrConfidence(null);
+        setSaveState("idle");
+        setAbhaError(null);
         setParsedBrand("");
         setParsedBatch("");
         setParsedExpiry("");
@@ -1108,6 +1128,8 @@ export default function ScanPage() {
         setBatchInput("");
         setOcrText(null);
         setOcrConfidence(null);
+        setSaveState("idle");
+        setAbhaError(null);
         setParsedBrand("");
         setParsedBatch("");
         setParsedExpiry("");
@@ -1127,6 +1149,38 @@ export default function ScanPage() {
         setParsedBatch("");
         setParsedExpiry("");
         setOcrStatus("idle");
+        setSaveState("idle");
+        setAbhaError(null);
+    };
+
+    const handleSaveToABHA = async () => {
+        if (!verifyResult) return;
+        setSaveState("saving");
+        setAbhaError(null);
+        try {
+            const medicineId =
+                (verifyResult.verified && (verifyResult.medicine as any).id) || "unknown-med-id";
+            const resultData = {
+                verified: verifyResult.verified,
+                medicine: verifyResult.verified
+                    ? verifyResult.medicine
+                    : {
+                          brand_name: parsedBrand,
+                          generic_name: parsedBrand,
+                          manufacturer: "Unknown Manufacturer",
+                          batch_number: parsedBatch,
+                          expiry_date: parsedExpiry || null,
+                          cdsco_approval_status: "Unverified",
+                          is_counterfeit_alert: true,
+                      },
+            };
+
+            await uploadVerificationToABHA(medicineId, resultData, new Date().toISOString());
+            setSaveState("saved");
+        } catch (err: any) {
+            setSaveState("error");
+            setAbhaError(err.message || "Failed to save verification result to ABHA.");
+        }
     };
 
     const handleShare = async () => {
@@ -1304,6 +1358,44 @@ export default function ScanPage() {
                                         onShare={handleShare}
                                         shareLabel={tScan("share.button")}
                                     />
+                                )}
+
+                                {/* Save to ABHA Section */}
+                                {abhaLinked && verifyResult && (
+                                    <div className="mt-6 flex w-full max-w-sm flex-col items-center border-t border-(--color-border-muted) pt-4">
+                                        <button
+                                            onClick={handleSaveToABHA}
+                                            disabled={
+                                                saveState === "saving" || saveState === "saved"
+                                            }
+                                            className={`flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition-all focus:ring-2 focus:outline-none ${
+                                                saveState === "saved"
+                                                    ? "bg-emerald-100 text-emerald-800 focus:ring-emerald-500 dark:bg-emerald-950/20 dark:text-emerald-300"
+                                                    : saveState === "saving"
+                                                      ? "cursor-not-allowed bg-slate-100 text-slate-500 dark:bg-slate-900"
+                                                      : "bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500"
+                                            }`}
+                                        >
+                                            {saveState === "saving" && (
+                                                <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                                            )}
+                                            {saveState === "saved" && (
+                                                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                                            )}
+                                            <span>
+                                                {saveState === "saving"
+                                                    ? tABHA("saving")
+                                                    : saveState === "saved"
+                                                      ? tABHA("saved")
+                                                      : tABHA("save_to_abha")}
+                                            </span>
+                                        </button>
+                                        {abhaError && (
+                                            <p className="mt-2 text-center text-xs font-semibold text-red-500">
+                                                {abhaError}
+                                            </p>
+                                        )}
+                                    </div>
                                 )}
                             </>
                         )}

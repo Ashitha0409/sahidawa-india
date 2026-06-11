@@ -21,10 +21,10 @@ Prior to this change, users interacting with our chat interfaces (both the dedic
 The implementation involved modifying three key frontend components to embed `Link` components for home navigation:
 
 1.  **`apps/web/app/[locale]/components/Chatbot.tsx`**:
-    *   We imported the `Home` icon from `lucide-react` and the `Link` component from `@/i18n/routing`.
-    *   Inside the chatbot's header (`<div className="flex items-center justify-between p-4">`), we located the existing close button (`<button onClick={() => setIsOpen(false)} ...>`).
-    *   A new `div` element with `className="flex items-center gap-1"` was introduced to group the close button and the new home navigation link.
-    *   Within this `div`, a `Link` component was added:
+    - We imported the `Home` icon from `lucide-react` and the `Link` component from `@/i18n/routing`.
+    - Inside the chatbot's header (`<div className="flex items-center justify-between p-4">`), we located the existing close button (`<button onClick={() => setIsOpen(false)} ...>`).
+    - A new `div` element with `className="flex items-center gap-1"` was introduced to group the close button and the new home navigation link.
+    - Within this `div`, a `Link` component was added:
         ```typescript
         <Link
             href="/"
@@ -34,22 +34,22 @@ The implementation involved modifying three key frontend components to embed `Li
             <Home size={18} />
         </Link>
         ```
-    *   This `Link` renders the `Home` icon and directs to the root path (`/`), providing a quick return to the homepage from the floating chatbot panel.
+    - This `Link` renders the `Home` icon and directs to the root path (`/`), providing a quick return to the homepage from the floating chatbot panel.
 
 2.  **`apps/web/app/[locale]/components/Navbar.tsx`**:
-    *   We imported the `Home` icon from `lucide-react`.
-    *   Within the desktop navigation section (`<nav className="ml-6 hidden items-center justify-center gap-6 ...">`), a new `Link` component was inserted as the first navigation item:
+    - We imported the `Home` icon from `lucide-react`.
+    - Within the desktop navigation section (`<nav className="ml-6 hidden items-center justify-center gap-6 ...">`), a new `Link` component was inserted as the first navigation item:
         ```typescript
         <Link href="/" className={desktopNavLinkClassName}>
             <Home size={14} className="mr-1 inline" />
             {tNav("home")}
         </Link>
         ```
-    *   This `Link` uses the `desktopNavLinkClassName` for consistent styling, includes the `Home` icon, and displays localized text for "home" using `tNav("home")`. This ensures a prominent "Home" option is always available in the main navigation for larger screens.
+    - This `Link` uses the `desktopNavLinkClassName` for consistent styling, includes the `Home` icon, and displays localized text for "home" using `tNav("home")`. This ensures a prominent "Home" option is always available in the main navigation for larger screens.
 
 3.  **`apps/web/app/components/health/ChatUI.tsx`**:
-    *   The `Home` icon was already imported from `lucide-react` in this file.
-    *   Inside the `ChatUI` header, the `<h1>SahiDawa</h1>` title was wrapped with a `Link` component:
+    - The `Home` icon was already imported from `lucide-react` in this file.
+    - Inside the `ChatUI` header, the `<h1>SahiDawa</h1>` title was wrapped with a `Link` component:
         ```typescript
         <Link
             href={`/${locale}`}
@@ -58,7 +58,7 @@ The implementation involved modifying three key frontend components to embed `Li
             SahiDawa
         </Link>
         ```
-    *   The `href` is dynamically set to `/${locale}` to ensure proper internationalized routing back to the homepage, respecting the current language setting. Hover styles were added to visually indicate its clickable nature.
+    - The `href` is dynamically set to `/${locale}` to ensure proper internationalized routing back to the homepage, respecting the current language setting. Hover styles were added to visually indicate its clickable nature.
 
 All `Link` components leverage our `next-intl` routing setup to ensure that navigation is handled correctly across different locales.
 
@@ -76,18 +76,18 @@ To re-implement or add similar home navigation functionality:
 
 1.  **Identify Target Component:** Determine which UI component requires a home navigation link (e.g., a header, a sidebar, a modal).
 2.  **Import Dependencies:**
-    *   If an icon is desired, import it from `lucide-react`: `import { Home } from "lucide-react";`
-    *   For client-side, internationalized routing, import our custom `Link` component: `import { Link } from "@/i18n/routing";`
-    *   If the component is locale-aware, ensure `useLocale()` or `useTranslations()` is available to construct locale-specific paths or text.
+    - If an icon is desired, import it from `lucide-react`: `import { Home } from "lucide-react";`
+    - For client-side, internationalized routing, import our custom `Link` component: `import { Link } from "@/i18n/routing";`
+    - If the component is locale-aware, ensure `useLocale()` or `useTranslations()` is available to construct locale-specific paths or text.
 3.  **Place the `Link` Component:**
-    *   Wrap an existing element (like a title or logo) with the `Link` component, or
-    *   Create a new `Link` component with an icon and/or text.
+    - Wrap an existing element (like a title or logo) with the `Link` component, or
+    - Create a new `Link` component with an icon and/or text.
 4.  **Configure `Link` Properties:**
-    *   Set the `href` prop to `/` for the root homepage. If the component is locale-aware and you want to explicitly include the locale in the path, use `href={`/${locale}`}` (where `locale` is obtained from `useLocale()`).
-    *   Apply appropriate `className` for styling, ensuring it integrates with the existing design system (e.g., `desktopNavLinkClassName` from `Navbar.tsx`).
-    *   Add `aria-label` for accessibility, describing the link's purpose (e.g., `aria-label="Go to homepage"`).
-    *   If using an icon, embed it within the `Link` component: `<Home size={18} />`.
-    *   If using text, ensure it's localized using `useTranslations()`: `{t("home")}`.
+    - Set the `href` prop to `/` for the root homepage. If the component is locale-aware and you want to explicitly include the locale in the path, use `href={`/${locale}`}` (where `locale` is obtained from `useLocale()`).
+    - Apply appropriate `className` for styling, ensuring it integrates with the existing design system (e.g., `desktopNavLinkClassName` from `Navbar.tsx`).
+    - Add `aria-label` for accessibility, describing the link's purpose (e.g., `aria-label="Go to homepage"`).
+    - If using an icon, embed it within the `Link` component: `<Home size={18} />`.
+    - If using text, ensure it's localized using `useTranslations()`: `{t("home")}`.
 5.  **Test:** Verify that clicking the link performs a client-side navigation to the correct homepage URL, respecting the current locale, and that styling is correct.
 
 **Example Pattern (from `Chatbot.tsx`):**
@@ -120,11 +120,11 @@ import { Link } from "@/i18n/routing";
 
 This change primarily impacts the frontend user experience and navigability. It does not introduce new backend services, database schema changes, or significant architectural shifts.
 
-*   **Improved UX:** Users now have clear and consistent pathways to return to the homepage from various points in the application, enhancing overall usability.
-*   **Design Consistency:** The use of `lucide-react` icons and existing styling classes ensures that the new navigation elements align with SahiDawa's established design language.
-*   **Internationalization Adherence:** By utilizing `next-intl`'s `Link` component, we reinforce our commitment to a fully internationalized platform, ensuring navigation works seamlessly across all supported languages.
-*   **No Performance Overhead:** The changes are minimal and involve client-side routing, adding negligible performance overhead.
-*   **No Backend Impact:** This is purely a frontend enhancement; no changes were required to our API, data models, or server-side logic.
+- **Improved UX:** Users now have clear and consistent pathways to return to the homepage from various points in the application, enhancing overall usability.
+- **Design Consistency:** The use of `lucide-react` icons and existing styling classes ensures that the new navigation elements align with SahiDawa's established design language.
+- **Internationalization Adherence:** By utilizing `next-intl`'s `Link` component, we reinforce our commitment to a fully internationalized platform, ensuring navigation works seamlessly across all supported languages.
+- **No Performance Overhead:** The changes are minimal and involve client-side routing, adding negligible performance overhead.
+- **No Backend Impact:** This is purely a frontend enhancement; no changes were required to our API, data models, or server-side logic.
 
 This feature unlocks a more intuitive user flow, especially for new users or those who might get "lost" in deeper application sections like the dedicated health chat.
 
@@ -134,11 +134,11 @@ Verification for this change was primarily visual and functional, as documented 
 
 1.  **Visual Inspection:** Screenshots were provided demonstrating the new "Home" link in the desktop `Navbar`, the "Home" icon button in the floating `Chatbot` panel, and the clickable "SahiDawa" title in the `ChatUI` header. This confirmed correct rendering and placement of the new UI elements.
 2.  **Functional Testing:**
-    *   The `Link` components were clicked in each context (`Navbar`, `Chatbot`, `ChatUI`) to verify that they correctly navigate to the SahiDawa homepage (`/` or `/${locale}`).
-    *   Navigation was tested across different locales to ensure the `Link` components correctly preserve or redirect to the appropriate locale-prefixed URL.
-    *   The `aria-label` attributes were implicitly verified by the PR description, ensuring accessibility considerations were addressed.
+    - The `Link` components were clicked in each context (`Navbar`, `Chatbot`, `ChatUI`) to verify that they correctly navigate to the SahiDawa homepage (`/` or `/${locale}`).
+    - Navigation was tested across different locales to ensure the `Link` components correctly preserve or redirect to the appropriate locale-prefixed URL.
+    - The `aria-label` attributes were implicitly verified by the PR description, ensuring accessibility considerations were addressed.
 3.  **Edge Cases:**
-    *   The behavior of the floating `Chatbot`'s home button when the chatbot is open and closed was implicitly tested by the screenshots showing the button within the open panel.
-    *   Responsiveness for the `Navbar`'s home link (hidden on mobile, visible on desktop) was confirmed by the context of the `desktopNavLinkClassName`.
+    - The behavior of the floating `Chatbot`'s home button when the chatbot is open and closed was implicitly tested by the screenshots showing the button within the open panel.
+    - Responsiveness for the `Navbar`'s home link (hidden on mobile, visible on desktop) was confirmed by the context of the `desktopNavLinkClassName`.
 
 Specific automated test cases or unit tests added for this PR are not documented in this PR.

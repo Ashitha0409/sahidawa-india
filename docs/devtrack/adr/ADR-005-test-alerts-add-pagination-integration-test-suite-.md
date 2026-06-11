@@ -14,15 +14,16 @@ The API response was standardized to include `data` (the array of alerts), `page
 
 ## Alternatives Considered
 
-| Alternative | Why Rejected |
-|---|---|
-| **Retrieve All Alerts** | Inefficient for growing datasets, leading to high memory consumption, slow response times, and poor user experience. Not scalable for a production system. |
-| **Offset-based Pagination without Total Counts** | While simpler to implement by omitting the `count: "exact"` query, this approach prevents clients from displaying total item counts or total page numbers. This limitation hinders user navigation (e.g., "Go to last page") and overall understanding of the dataset's scope, resulting in a poorer user experience. |
-| **Cursor-based Pagination** | More complex to implement on both backend and frontend, and does not inherently support "jump to page N" functionality, which is often desired for administrative lists. While potentially more performant for extremely large, frequently updated datasets, the current scale and use case for alerts did not warrant this added complexity over traditional offset-based pagination with total counts. |
+| Alternative                                      | Why Rejected                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Retrieve All Alerts**                          | Inefficient for growing datasets, leading to high memory consumption, slow response times, and poor user experience. Not scalable for a production system.                                                                                                                                                                                                                                               |
+| **Offset-based Pagination without Total Counts** | While simpler to implement by omitting the `count: "exact"` query, this approach prevents clients from displaying total item counts or total page numbers. This limitation hinders user navigation (e.g., "Go to last page") and overall understanding of the dataset's scope, resulting in a poorer user experience.                                                                                    |
+| **Cursor-based Pagination**                      | More complex to implement on both backend and frontend, and does not inherently support "jump to page N" functionality, which is often desired for administrative lists. While potentially more performant for extremely large, frequently updated datasets, the current scale and use case for alerts did not warrant this added complexity over traditional offset-based pagination with total counts. |
 
 ## Consequences
 
 **Positive:**
+
 - Enabled efficient retrieval and display of `drug_alerts`, improving API performance and reducing server load.
 - Enhanced user experience by allowing users to browse alerts in manageable, paginated chunks.
 - Established a standardized and robust pagination pattern for future API endpoints within the `apps/api` service.
@@ -30,6 +31,7 @@ The API response was standardized to include `data` (the array of alerts), `page
 - Provided full pagination metadata (`totalCount`, `totalPageCount`) to clients, enabling richer UI components and navigation.
 
 **Trade-offs:**
+
 - The `count: "exact"` operation in Supabase (which translates to `COUNT(*)`) can introduce performance overhead on very large tables, especially without appropriate database indexing.
 - Requires client-side logic to manage `page` and `limit` parameters and interpret the returned pagination metadata for UI presentation.
 

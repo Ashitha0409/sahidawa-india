@@ -21,22 +21,22 @@ Prior to this PR, our AI chat assistant was not locale-aware, meaning it consist
 This feature was implemented by introducing a dynamic locale-aware system across both our frontend chat UI and the backend AI API.
 
 1.  **Prompt Refactoring and Centralization (`apps/web/lib/chatPrompts.ts`):**
-    *   We created a new file, `apps/web/lib/chatPrompts.ts`, to centralize our AI system prompts.
-    *   This file exports `BASE_PROMPT`, which defines the SahiDawa AI Assistant's persona, core instructions, and a crucial placeholder: `IMPORTANT: Respond in {language}.` This placeholder is key for dynamic language injection.
+    - We created a new file, `apps/web/lib/chatPrompts.ts`, to centralize our AI system prompts.
+    - This file exports `BASE_PROMPT`, which defines the SahiDawa AI Assistant's persona, core instructions, and a crucial placeholder: `IMPORTANT: Respond in {language}.` This placeholder is key for dynamic language injection.
 
 2.  **Frontend Locale Detection and Message Handling (`apps/web/app/components/health/ChatUI.tsx`):**
-    *   The `ChatUI` component now utilizes `useParams` from `next/navigation` to dynamically retrieve the active `locale` from the URL. This ensures the UI is aware of the user's preferred language.
-    *   We introduced `INITIAL_MESSAGES`, an object mapping locale codes (e.g., `en`, `bn`, `te`) to localized welcome messages. The `initialMessage` state is now set based on the detected `locale`, falling back to English if the specific locale's message is not found.
-    *   When a user sends a message via `handleSendMessage`, the `locale` is now included in the request body sent to our `/api/chat` endpoint: `body: JSON.stringify({ messages: history, locale })`. This propagates the user's language preference to the backend.
-    *   For speech recognition, the `toggleListening` function was updated to dynamically set the `r.lang` property of the `SpeechRecognition` object. A `speechLocales` map was introduced to provide specific language codes (e.g., `en-IN`, `bn-IN`, `ur-IN`) for the `SpeechRecognition` API based on the active `locale`, ensuring accurate voice input interpretation.
+    - The `ChatUI` component now utilizes `useParams` from `next/navigation` to dynamically retrieve the active `locale` from the URL. This ensures the UI is aware of the user's preferred language.
+    - We introduced `INITIAL_MESSAGES`, an object mapping locale codes (e.g., `en`, `bn`, `te`) to localized welcome messages. The `initialMessage` state is now set based on the detected `locale`, falling back to English if the specific locale's message is not found.
+    - When a user sends a message via `handleSendMessage`, the `locale` is now included in the request body sent to our `/api/chat` endpoint: `body: JSON.stringify({ messages: history, locale })`. This propagates the user's language preference to the backend.
+    - For speech recognition, the `toggleListening` function was updated to dynamically set the `r.lang` property of the `SpeechRecognition` object. A `speechLocales` map was introduced to provide specific language codes (e.g., `en-IN`, `bn-IN`, `ur-IN`) for the `SpeechRecognition` API based on the active `locale`, ensuring accurate voice input interpretation.
 
 3.  **Backend AI Response Generation (`apps/web/app/api/chat/route.ts`):**
-    *   The `/api/chat` POST handler now imports `BASE_PROMPT` from `lib/chatPrompts.ts`.
-    *   It expects a `locale` field in the incoming request body, alongside `messages`, `mode`, and `responseLanguage`.
-    *   We defined `supportedLocales` (e.g., `["en", "gu", "bn", "te", "ta", "mr", "ur", "kn"]`) to validate the incoming `locale`. If the provided `locale` is not supported, it defaults to "en".
-    *   A `localeMap` object translates locale codes (e.g., `en`) into human-readable language names (e.g., "English").
-    *   The `systemPrompt` for the Gemini AI model is then dynamically constructed by taking `BASE_PROMPT` and replacing the `{language}` placeholder with the human-readable language name obtained from `localeMap` based on the `finalLocale`.
-    *   This dynamically generated `systemInstruction` is passed to `ai.models.generateContent`, instructing the AI to generate its response in the specified language.
+    - The `/api/chat` POST handler now imports `BASE_PROMPT` from `lib/chatPrompts.ts`.
+    - It expects a `locale` field in the incoming request body, alongside `messages`, `mode`, and `responseLanguage`.
+    - We defined `supportedLocales` (e.g., `["en", "gu", "bn", "te", "ta", "mr", "ur", "kn"]`) to validate the incoming `locale`. If the provided `locale` is not supported, it defaults to "en".
+    - A `localeMap` object translates locale codes (e.g., `en`) into human-readable language names (e.g., "English").
+    - The `systemPrompt` for the Gemini AI model is then dynamically constructed by taking `BASE_PROMPT` and replacing the `{language}` placeholder with the human-readable language name obtained from `localeMap` based on the `finalLocale`.
+    - This dynamically generated `systemInstruction` is passed to `ai.models.generateContent`, instructing the AI to generate its response in the specified language.
 
 This integrated approach ensures that the user's language preference is respected from the initial welcome message, through speech input, and ultimately in the AI's generated responses.
 
@@ -54,9 +54,9 @@ This integrated approach ensures that the user's language preference is respecte
 To re-implement or extend this locale-aware chat functionality, a contributor would follow these steps:
 
 1.  **Define a Base AI Prompt:**
-    *   Create a dedicated module (e.g., `lib/chatPrompts.ts`) to house the core AI system prompt.
-    *   Ensure this prompt includes a placeholder for dynamic language injection, such as `IMPORTANT: Respond in {language}.`
-    *   Example:
+    - Create a dedicated module (e.g., `lib/chatPrompts.ts`) to house the core AI system prompt.
+    - Ensure this prompt includes a placeholder for dynamic language injection, such as `IMPORTANT: Respond in {language}.`
+    - Example:
         ```typescript
         // apps/web/lib/chatPrompts.ts
         export const BASE_PROMPT = `
@@ -66,12 +66,12 @@ To re-implement or extend this locale-aware chat functionality, a contributor wo
         ```
 
 2.  **Manage Supported Locales and Language Mappings:**
-    *   In the backend API route (`apps/web/app/api/chat/route.ts`), define an array of `supportedLocales` (e.g., `["en", "hi", "bn"]`).
-    *   Create a `localeMap` object that translates these locale codes into human-readable language names that can be injected into the AI prompt (e.g., `{ en: "English", hi: "Hindi", bn: "Bengali" }`).
+    - In the backend API route (`apps/web/app/api/chat/route.ts`), define an array of `supportedLocales` (e.g., `["en", "hi", "bn"]`).
+    - Create a `localeMap` object that translates these locale codes into human-readable language names that can be injected into the AI prompt (e.g., `{ en: "English", hi: "Hindi", bn: "Bengali" }`).
 
 3.  **Frontend Locale Retrieval and Propagation:**
-    *   In the chat UI component (`apps/web/app/components/health/ChatUI.tsx`), use `useParams()` from `next/navigation` to extract the current `locale` from the URL.
-    *   When making API calls to the chat endpoint, include this `locale` in the request body:
+    - In the chat UI component (`apps/web/app/components/health/ChatUI.tsx`), use `useParams()` from `next/navigation` to extract the current `locale` from the URL.
+    - When making API calls to the chat endpoint, include this `locale` in the request body:
         ```typescript
         // apps/web/app/components/health/ChatUI.tsx
         const params = useParams();
@@ -85,9 +85,9 @@ To re-implement or extend this locale-aware chat functionality, a contributor wo
         ```
 
 4.  **Localized Initial Messages:**
-    *   Define an object of `INITIAL_MESSAGES` in the chat UI component, mapping locales to their respective welcome messages.
-    *   Set the initial chat state using the message corresponding to the detected `locale`, with a fallback to English.
-    *   Example:
+    - Define an object of `INITIAL_MESSAGES` in the chat UI component, mapping locales to their respective welcome messages.
+    - Set the initial chat state using the message corresponding to the detected `locale`, with a fallback to English.
+    - Example:
         ```typescript
         // apps/web/app/components/health/ChatUI.tsx
         const INITIAL_MESSAGES = {
@@ -95,14 +95,22 @@ To re-implement or extend this locale-aware chat functionality, a contributor wo
             bn: "নমস্কার, আমি SahiDawa।",
         };
         // ...
-        const initialMessageContent = INITIAL_MESSAGES[locale as keyof typeof INITIAL_MESSAGES] || INITIAL_MESSAGES.en;
-        const [messages, setMessages] = useState<Message[]>([{ id: "init", role: "assistant", content: initialMessageContent, timestamp: new Date() }]);
+        const initialMessageContent =
+            INITIAL_MESSAGES[locale as keyof typeof INITIAL_MESSAGES] || INITIAL_MESSAGES.en;
+        const [messages, setMessages] = useState<Message[]>([
+            {
+                id: "init",
+                role: "assistant",
+                content: initialMessageContent,
+                timestamp: new Date(),
+            },
+        ]);
         ```
 
 5.  **Dynamic Speech Recognition Language:**
-    *   In the chat UI component, create a `speechLocales` map to provide specific `lang` values for the `SpeechRecognition` API.
-    *   Set the `SpeechRecognition` instance's `lang` property dynamically based on the current `locale`.
-    *   Example:
+    - In the chat UI component, create a `speechLocales` map to provide specific `lang` values for the `SpeechRecognition` API.
+    - Set the `SpeechRecognition` instance's `lang` property dynamically based on the current `locale`.
+    - Example:
         ```typescript
         // apps/web/app/components/health/ChatUI.tsx
         const speechLocales = {
@@ -114,12 +122,12 @@ To re-implement or extend this locale-aware chat functionality, a contributor wo
         ```
 
 6.  **Backend AI Prompt Construction:**
-    *   In the backend API route (`apps/web/app/api/chat/route.ts`), receive the `locale` from the request body.
-    *   Implement logic to validate the `locale` against `supportedLocales` and apply a fallback (e.g., to "en").
-    *   Use the `localeMap` to get the human-readable language name.
-    *   Construct the `systemInstruction` by replacing the placeholder in `BASE_PROMPT` with this language name.
-    *   Pass this dynamic `systemInstruction` to the AI model's content generation function.
-    *   Example:
+    - In the backend API route (`apps/web/app/api/chat/route.ts`), receive the `locale` from the request body.
+    - Implement logic to validate the `locale` against `supportedLocales` and apply a fallback (e.g., to "en").
+    - Use the `localeMap` to get the human-readable language name.
+    - Construct the `systemInstruction` by replacing the placeholder in `BASE_PROMPT` with this language name.
+    - Pass this dynamic `systemInstruction` to the AI model's content generation function.
+    - Example:
         ```typescript
         // apps/web/app/api/chat/route.ts
         import { BASE_PROMPT } from "@/lib/chatPrompts";

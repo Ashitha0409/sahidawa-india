@@ -33,11 +33,11 @@ The core changes for implementing pagination are encapsulated within the `getAll
     - The previous Supabase query `supabase.from('medicines').select('*').limit(50);` was replaced with a more advanced query:
         ```typescript
         const { data, error, count } = await supabase
-          .from('medicines')
-          .select('*', { count: 'exact' })
-          .range(offset, offset + limit - 1);
+            .from("medicines")
+            .select("*", { count: "exact" })
+            .range(offset, offset + limit - 1);
         ```
-    - `select('*', { count: 'exact' })`: This is a critical change. It instructs Supabase to not only fetch the selected columns but also to return the total count of records that match the query *before* any pagination is applied. This `count` is essential for calculating the total number of pages.
+    - `select('*', { count: 'exact' })`: This is a critical change. It instructs Supabase to not only fetch the selected columns but also to return the total count of records that match the query _before_ any pagination is applied. This `count` is essential for calculating the total number of pages.
     - `.range(offset, offset + limit - 1)`: This method is used for pagination. Supabase's `range` is inclusive for both its start and end parameters. Therefore, `offset` defines the starting index (0-based), and `offset + limit - 1` defines the inclusive end index for the current page's records.
 
 5.  **Supabase Error Handling:**
@@ -47,13 +47,13 @@ The core changes for implementing pagination are encapsulated within the `getAll
     - The API response is now structured to include both the paginated data and metadata:
         ```typescript
         res.json({
-          medicines: data,
-          meta: {
-            total: count || 0,
-            page,
-            limit,
-            totalPages: count ? Math.ceil(count / limit) : 0
-          }
+            medicines: data,
+            meta: {
+                total: count || 0,
+                page,
+                limit,
+                totalPages: count ? Math.ceil(count / limit) : 0,
+            },
         });
         ```
     - `medicines: data`: This key holds the array of medicine records for the current page.
@@ -84,11 +84,11 @@ Should a contributor need to implement a similar pagination feature for another 
 2.  **Integrate `try-catch`:** Wrap the entire function's logic within a `try-catch` block to ensure robust error handling.
     ```typescript
     export const getYourData = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-      try {
-        // ... pagination logic ...
-      } catch (err) {
-        res.status(500).json({ error: 'Internal server error' });
-      }
+        try {
+            // ... pagination logic ...
+        } catch (err) {
+            res.status(500).json({ error: "Internal server error" });
+        }
     };
     ```
 3.  **Parse Query Parameters:** Extract `page` and `limit` from `req.query`, providing default values for robustness.
@@ -103,34 +103,34 @@ Should a contributor need to implement a similar pagination feature for another 
 5.  **Construct Supabase Query:** Modify the Supabase query to include `count: 'exact'` and `.range()`.
     ```typescript
     const { data, error, count } = await supabase
-      .from('your_table_name') // Replace with the actual table name
-      .select('*', { count: 'exact' }) // Essential for total count
-      .range(offset, offset + limit - 1); // Supabase range is inclusive
+        .from("your_table_name") // Replace with the actual table name
+        .select("*", { count: "exact" }) // Essential for total count
+        .range(offset, offset + limit - 1); // Supabase range is inclusive
     ```
 6.  **Handle Supabase Errors:** Check for errors returned by Supabase and respond accordingly.
     ```typescript
     if (error) {
-      res.status(500).json({ error: 'Failed to fetch your data' });
-      return;
+        res.status(500).json({ error: "Failed to fetch your data" });
+        return;
     }
     ```
 7.  **Format Response:** Structure the API response to include the paginated data and the `meta` object.
     ```typescript
     res.json({
-      your_data_key: data, // e.g., 'users', 'reports'
-      meta: {
-        total: count || 0,
-        page,
-        limit,
-        totalPages: count ? Math.ceil(count / limit) : 0
-      }
+        your_data_key: data, // e.g., 'users', 'reports'
+        meta: {
+            total: count || 0,
+            page,
+            limit,
+            totalPages: count ? Math.ceil(count / limit) : 0,
+        },
     });
     ```
     **Gotchas and Best Practices:**
-    *   Always use `count: 'exact'` with Supabase `select` to get the total record count efficiently in a single query.
-    *   Remember that Supabase's `.range(start, end)` is inclusive; ensure your `end` index is `offset + limit - 1`.
-    *   Provide meaningful default values for `page` and `limit` to ensure the API is usable even without explicit client parameters.
-    *   Document the new query parameters (`page`, `limit`) and the response structure (`meta` object) for frontend developers.
+    - Always use `count: 'exact'` with Supabase `select` to get the total record count efficiently in a single query.
+    - Remember that Supabase's `.range(start, end)` is inclusive; ensure your `end` index is `offset + limit - 1`.
+    - Provide meaningful default values for `page` and `limit` to ensure the API is usable even without explicit client parameters.
+    - Document the new query parameters (`page`, `limit`) and the response structure (`meta` object) for frontend developers.
 
 ## Impact on System Architecture
 

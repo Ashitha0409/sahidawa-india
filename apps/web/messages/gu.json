@@ -639,7 +639,7 @@
         "nav_reports": "My Reports",
         "nav_profile": "My Profile"
     },
-    "howItWorks":{
+    "howItWorks": {
         "badge": "સુરક્ષિત આરોગ્ય સેવા • AI દ્વારા સંચાલિત",
         "heroTitle": "<highlight>SahiDawa</highlight> કેવી રીતે કામ કરે છે",
         "heroSubtitle": "જાણો કે કેવી રીતે SahiDawa વપરાશકર્તાઓને દવાઓ પ્રમાણિત કરવામાં, વિશ્વસનીય ફાર્મસીઓ શોધવામાં, સત્તાવાર એલર્ટ મેળવવામાં અને AI-સંચાલિત હેલ્થ ટૂલ્સનો ઉપયોગ કરીને નકલી દવાઓથી સુરક્ષિત રહેવામાં મદદ કરે છે.",
@@ -708,37 +708,37 @@
             }
         }
     },
-  "medicineSafety": {
-    "guideTitle": "ઉપયોગ અને સુરક્ષા માર્ગદર્શિકા",
-    "noDosageInfo": "આ વય જૂથ માટે ડોઝની માહિતી ઉપલબ્ધ નથી.",
-    "closeButton": "સુરક્ષા માહિતી બંધ કરો",
-    "tabs": {
-      "sideEffects": "આડઅસરો",
-      "dosage": "ડોઝ",
-      "dietaryIntake": "આહાર"
-    },
-    "sideEffects": {
-      "standardSymptoms": "સામાન્ય લક્ષણો",
-      "severeRedFlags": "ગંભીર ચેતવણીઓ — તાત્કાલિક તબીબી સહાય લો"
-    },
-    "dosage": {
-      "tabs": {
-        "kids": "બાળકો",
-        "adults": "વયસ્કો",
-        "elderly": "વૃદ્ધો"
-      },
-      "doseLabel": "ડોઝ:",
-      "frequencyLabel": "આવર્તન:",
-      "notesHeading": "નોંધો",
-      "warningsHeading": "ચેતવણીઓ"
-    },
-    "dietary": {
-      "tabs": {
-        "dietaryIntake": "આહાર"
-      },
-      "storageHeading": "સંગ્રહ",
-      "pregnancyHeading": "ગર્ભાવસ્થા"
-    },
-    "disclaimer": "આ માહિતી શૈક્ષણિક હેતુ માટે છે અને વ્યાવસાયિક તબીબી સલાહનો વિકલ્પ નથી."
-  }
+    "medicineSafety": {
+        "guideTitle": "ઉપયોગ અને સુરક્ષા માર્ગદર્શિકા",
+        "noDosageInfo": "આ વય જૂથ માટે ડોઝની માહિતી ઉપલબ્ધ નથી.",
+        "closeButton": "સુરક્ષા માહિતી બંધ કરો",
+        "tabs": {
+            "sideEffects": "આડઅસરો",
+            "dosage": "ડોઝ",
+            "dietaryIntake": "આહાર"
+        },
+        "sideEffects": {
+            "standardSymptoms": "સામાન્ય લક્ષણો",
+            "severeRedFlags": "ગંભીર ચેતવણીઓ — તાત્કાલિક તબીબી સહાય લો"
+        },
+        "dosage": {
+            "tabs": {
+                "kids": "બાળકો",
+                "adults": "વયસ્કો",
+                "elderly": "વૃદ્ધો"
+            },
+            "doseLabel": "ડોઝ:",
+            "frequencyLabel": "આવર્તન:",
+            "notesHeading": "નોંધો",
+            "warningsHeading": "ચેતવણીઓ"
+        },
+        "dietary": {
+            "tabs": {
+                "dietaryIntake": "આહાર"
+            },
+            "storageHeading": "સંગ્રહ",
+            "pregnancyHeading": "ગર્ભાવસ્થા"
+        },
+        "disclaimer": "આ માહિતી શૈક્ષણિક હેતુ માટે છે અને વ્યાવસાયિક તબીબી સલાહનો વિકલ્પ નથી."
+    }
 }

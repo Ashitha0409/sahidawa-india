@@ -150,7 +150,6 @@ export function BarcodeScanner({
 
                 controlsRef.current = controls;
                 setStatus("scanning");
-
             } catch (err: unknown) {
                 if (cancelled) return;
                 const errorObj = err instanceof Error ? err : new Error(String(err));

@@ -79,7 +79,7 @@ export const PageHeader = ({
                     className={`flex shrink-0 items-center justify-end gap-2 ${rightActionsClassName}`}
                 >
                     {/* STATUS OR QUICK ACTIONS CONTAINER */}
-                    
+
                     {showLanguage ? (
                         <div
                             className="flex items-center gap-1.5 rounded-full border border-(--color-border-muted) bg-(--color-surface-page) px-3 py-1.5 shadow-sm"
@@ -93,7 +93,7 @@ export const PageHeader = ({
                         </div>
                     ) : isDark ? (
                         <button
-                           onClick={() => {}}
+                            onClick={() => {}}
                             aria-label="Quick actions"
                             className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-colors hover:bg-white/20 ${pageHeaderFocusRingClass}`}
                         >

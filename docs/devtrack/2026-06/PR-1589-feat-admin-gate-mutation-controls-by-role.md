@@ -22,32 +22,32 @@ Prior to this PR, all authenticated users accessing the admin dashboard were pre
 This feature introduces a new shared authentication helper and integrates it across the admin dashboard to gate UI elements and API calls based on the user's role.
 
 1.  **New Authentication Helper (`apps/web/lib/adminAuth.ts`):**
-    *   We introduced a new file, `adminAuth.ts`, to centralize logic for handling admin roles.
-    *   It defines `AdminRole` as a union type: `"admin" | "moderator"`.
-    *   `toAdminRole(value: unknown)`: A utility function that safely casts an unknown value to `AdminRole` if it matches "admin" or "moderator", otherwise returns `null`. This ensures type safety and robustness.
-    *   `getAdminRoleFromUser(user: Pick<User, "app_metadata" | "user_metadata"> | null | undefined)`: This function extracts the role from a Supabase `User` object, prioritizing `user.app_metadata?.role` and falling back to `user.user_metadata?.role`. It uses `toAdminRole` for normalization.
-    *   `getAdminRoleFromSession(session: Pick<Session, "user"> | null | undefined)`: A convenience wrapper that takes a Supabase `Session` object and delegates to `getAdminRoleFromUser` to retrieve the role.
-    *   `canMutateAdminData(role: AdminRole | null | undefined)`: This is the core permission logic. It returns `true` only if the provided `role` is strictly `"admin"`, effectively restricting mutation capabilities to administrators.
+    - We introduced a new file, `adminAuth.ts`, to centralize logic for handling admin roles.
+    - It defines `AdminRole` as a union type: `"admin" | "moderator"`.
+    - `toAdminRole(value: unknown)`: A utility function that safely casts an unknown value to `AdminRole` if it matches "admin" or "moderator", otherwise returns `null`. This ensures type safety and robustness.
+    - `getAdminRoleFromUser(user: Pick<User, "app_metadata" | "user_metadata"> | null | undefined)`: This function extracts the role from a Supabase `User` object, prioritizing `user.app_metadata?.role` and falling back to `user.user_metadata?.role`. It uses `toAdminRole` for normalization.
+    - `getAdminRoleFromSession(session: Pick<Session, "user"> | null | undefined)`: A convenience wrapper that takes a Supabase `Session` object and delegates to `getAdminRoleFromUser` to retrieve the role.
+    - `canMutateAdminData(role: AdminRole | null | undefined)`: This is the core permission logic. It returns `true` only if the provided `role` is strictly `"admin"`, effectively restricting mutation capabilities to administrators.
 
 2.  **Server-Side Layout Integration (`apps/web/app/[locale]/admin/layout.tsx`):**
-    *   The server-side `AdminLayout` now utilizes the new `getAdminRoleFromSession` helper to determine the user's role.
-    *   The existing redirection logic remains: if a user is not authenticated or if their role is neither "admin" nor "moderator", they are redirected to the login page or an unauthorized access page, respectively. This ensures basic access control before the client-side dashboard loads.
+    - The server-side `AdminLayout` now utilizes the new `getAdminRoleFromSession` helper to determine the user's role.
+    - The existing redirection logic remains: if a user is not authenticated or if their role is neither "admin" nor "moderator", they are redirected to the login page or an unauthorized access page, respectively. This ensures basic access control before the client-side dashboard loads.
 
 3.  **Client-Side Dashboard Integration (`apps/web/app/[locale]/admin/dashboard/page.tsx`):**
-    *   The `AdminDashboard` component now imports `createBrowserClient` from `@supabase/ssr` and the new helpers from `@/lib/adminAuth.ts`.
-    *   A `useState` hook, `adminRole`, is introduced to store the client-side user's role.
-    *   A `useEffect` hook is added to asynchronously fetch the Supabase session using `createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey())` and then update the `adminRole` state via `getAdminRoleFromSession`. This ensures the UI dynamically adapts to the user's role after initial server-side rendering.
-    *   A `canMutate` boolean constant is derived from `canMutateAdminData(adminRole)`. This flag is used extensively for conditional rendering and API call gating.
-    *   **UI Gating:**
-        *   The "Add Medicine" button (`<Plus /> {t("actions.addMedicine")}`) is now conditionally rendered based on `canMutate`.
-        *   The entire "Add Medicine" form is also conditionally rendered, requiring both `canMutate` and `showForm` to be true.
-        *   The `ReportsTable` component now receives the `canMutate` prop. Inside `ReportsTable`, the "Actions" table header and the individual "Mark Fake" and "False Alarm" action buttons for each report are conditionally rendered based on `canMutate`.
-    *   **API Call Gating:**
-        *   The `handleReportAction` and `handleAddMedicine` functions now include an early `return` statement if `!canMutate`. This provides a crucial server-side-independent security layer, preventing unauthorized mutation requests from being sent even if a user bypasses or manipulates the client-side UI.
+    - The `AdminDashboard` component now imports `createBrowserClient` from `@supabase/ssr` and the new helpers from `@/lib/adminAuth.ts`.
+    - A `useState` hook, `adminRole`, is introduced to store the client-side user's role.
+    - A `useEffect` hook is added to asynchronously fetch the Supabase session using `createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey())` and then update the `adminRole` state via `getAdminRoleFromSession`. This ensures the UI dynamically adapts to the user's role after initial server-side rendering.
+    - A `canMutate` boolean constant is derived from `canMutateAdminData(adminRole)`. This flag is used extensively for conditional rendering and API call gating.
+    - **UI Gating:**
+        - The "Add Medicine" button (`<Plus /> {t("actions.addMedicine")}`) is now conditionally rendered based on `canMutate`.
+        - The entire "Add Medicine" form is also conditionally rendered, requiring both `canMutate` and `showForm` to be true.
+        - The `ReportsTable` component now receives the `canMutate` prop. Inside `ReportsTable`, the "Actions" table header and the individual "Mark Fake" and "False Alarm" action buttons for each report are conditionally rendered based on `canMutate`.
+    - **API Call Gating:**
+        - The `handleReportAction` and `handleAddMedicine` functions now include an early `return` statement if `!canMutate`. This provides a crucial server-side-independent security layer, preventing unauthorized mutation requests from being sent even if a user bypasses or manipulates the client-side UI.
 
 4.  **New Test Suite (`apps/web/tests/admin-dashboard-role-gating.test.tsx`):**
-    *   A dedicated Jest test file was added to verify the role-gating logic using `@testing-library/react`.
-    *   It mocks the Supabase `getSession` method to simulate different user roles (admin, moderator, null) and asserts the visibility or absence of mutation controls.
+    - A dedicated Jest test file was added to verify the role-gating logic using `@testing-library/react`.
+    - It mocks the Supabase `getSession` method to simulate different user roles (admin, moderator, null) and asserts the visibility or absence of mutation controls.
 
 ## Technical Decisions
 
@@ -62,57 +62,62 @@ This feature introduces a new shared authentication helper and integrates it acr
 To re-implement this role-gating feature from scratch, a contributor would follow these steps:
 
 1.  **Define Admin Roles:**
-    *   Create a new file `apps/web/lib/adminAuth.ts`.
-    *   Define the `AdminRole` type: `export type AdminRole = "admin" | "moderator";`.
-    *   Implement a helper `toAdminRole(value: unknown): AdminRole | null` to safely cast values.
+    - Create a new file `apps/web/lib/adminAuth.ts`.
+    - Define the `AdminRole` type: `export type AdminRole = "admin" | "moderator";`.
+    - Implement a helper `toAdminRole(value: unknown): AdminRole | null` to safely cast values.
 
 2.  **Create Supabase Role Extraction Helpers:**
-    *   In `apps/web/lib/adminAuth.ts`, implement `getAdminRoleFromUser(user: Pick<User, "app_metadata" | "user_metadata"> | null | undefined): AdminRole | null` to extract the role from `user.app_metadata.role` or `user.user_metadata.role`.
-    *   Implement `getAdminRoleFromSession(session: Pick<Session, "user"> | null | undefined): AdminRole | null` as a wrapper around `getAdminRoleFromUser`.
+    - In `apps/web/lib/adminAuth.ts`, implement `getAdminRoleFromUser(user: Pick<User, "app_metadata" | "user_metadata"> | null | undefined): AdminRole | null` to extract the role from `user.app_metadata.role` or `user.user_metadata.role`.
+    - Implement `getAdminRoleFromSession(session: Pick<Session, "user"> | null | undefined): AdminRole | null` as a wrapper around `getAdminRoleFromUser`.
 
 3.  **Implement Mutation Permission Logic:**
-    *   In `apps/web/lib/adminAuth.ts`, add `export function canMutateAdminData(role: AdminRole | null | undefined): boolean { return role === "admin"; }`.
+    - In `apps/web/lib/adminAuth.ts`, add `export function canMutateAdminData(role: AdminRole | null | undefined): boolean { return role === "admin"; }`.
 
 4.  **Integrate into Server-Side Layout:**
-    *   Modify `apps/web/app/[locale]/admin/layout.tsx`.
-    *   Import `getAdminRoleFromSession` from `@/lib/adminAuth`.
-    *   Replace direct access to `session.user.app_metadata?.role` with `getAdminRoleFromSession(session)` for role determination.
-    *   Ensure the layout redirects users without appropriate roles.
+    - Modify `apps/web/app/[locale]/admin/layout.tsx`.
+    - Import `getAdminRoleFromSession` from `@/lib/adminAuth`.
+    - Replace direct access to `session.user.app_metadata?.role` with `getAdminRoleFromSession(session)` for role determination.
+    - Ensure the layout redirects users without appropriate roles.
 
 5.  **Integrate into Client-Side Dashboard:**
-    *   Modify `apps/web/app/[locale]/admin/dashboard/page.tsx`.
-    *   Import `createBrowserClient` from `@supabase/ssr` and `canMutateAdminData`, `getAdminRoleFromSession`, `AdminRole` from `@/lib/adminAuth`.
-    *   Add `const [adminRole, setAdminRole] = useState<AdminRole | null>(null);` to the component state.
-    *   Add a `useEffect` hook to fetch the Supabase session client-side and set `adminRole`:
+    - Modify `apps/web/app/[locale]/admin/dashboard/page.tsx`.
+    - Import `createBrowserClient` from `@supabase/ssr` and `canMutateAdminData`, `getAdminRoleFromSession`, `AdminRole` from `@/lib/adminAuth`.
+    - Add `const [adminRole, setAdminRole] = useState<AdminRole | null>(null);` to the component state.
+    - Add a `useEffect` hook to fetch the Supabase session client-side and set `adminRole`:
         ```typescript
         useEffect(() => {
             let mounted = true;
             const supabase = createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey());
-            supabase.auth.getSession().then(({ data }) => {
-                if (mounted) setAdminRole(getAdminRoleFromSession(data.session));
-            }).catch(() => {
-                if (mounted) setAdminRole(null);
-            });
-            return () => { mounted = false; };
+            supabase.auth
+                .getSession()
+                .then(({ data }) => {
+                    if (mounted) setAdminRole(getAdminRoleFromSession(data.session));
+                })
+                .catch(() => {
+                    if (mounted) setAdminRole(null);
+                });
+            return () => {
+                mounted = false;
+            };
         }, []);
         ```
-    *   Derive `const canMutate = canMutateAdminData(adminRole);`.
+    - Derive `const canMutate = canMutateAdminData(adminRole);`.
 
 6.  **Apply Conditional UI Rendering:**
-    *   Use the `canMutate` flag to conditionally render elements:
-        *   For the "Add Medicine" button: `{canMutate && (<button>...</button>)}`
-        *   For the "Add Medicine" form: `{canMutate && showForm && (<div>...</div>)}`
-        *   Pass `canMutate` as a prop to `ReportsTable`: `<ReportsTable ... canMutate={canMutate} />`.
-        *   Inside `ReportsTable`, conditionally render the "Actions" table header and the action buttons for each report row using `{canMutate && (<th>...</th>)}` and `{canMutate && (<td>...</td>)}`.
+    - Use the `canMutate` flag to conditionally render elements:
+        - For the "Add Medicine" button: `{canMutate && (<button>...</button>)}`
+        - For the "Add Medicine" form: `{canMutate && showForm && (<div>...</div>)}`
+        - Pass `canMutate` as a prop to `ReportsTable`: `<ReportsTable ... canMutate={canMutate} />`.
+        - Inside `ReportsTable`, conditionally render the "Actions" table header and the action buttons for each report row using `{canMutate && (<th>...</th>)}` and `{canMutate && (<td>...</td>)}`.
 
 7.  **Gate API Calls:**
-    *   In `handleReportAction` and `handleAddMedicine` functions, add an early exit: `if (!canMutate) return;` at the beginning of the function body.
+    - In `handleReportAction` and `handleAddMedicine` functions, add an early exit: `if (!canMutate) return;` at the beginning of the function body.
 
 8.  **Write Component Tests:**
-    *   Create `apps/web/tests/admin-dashboard-role-gating.test.tsx`.
-    *   Mock `createBrowserClient` and its `auth.getSession` method to return sessions with different `app_metadata.role` values ("admin", "moderator", `null`).
-    *   Use `@testing-library/react` to render the `AdminDashboard` component.
-    *   Assert the visibility or absence of mutation-related UI elements (buttons, form fields, table columns) for each mocked role.
+    - Create `apps/web/tests/admin-dashboard-role-gating.test.tsx`.
+    - Mock `createBrowserClient` and its `auth.getSession` method to return sessions with different `app_metadata.role` values ("admin", "moderator", `null`).
+    - Use `@testing-library/react` to render the `AdminDashboard` component.
+    - Assert the visibility or absence of mutation-related UI elements (buttons, form fields, table columns) for each mocked role.
 
 ## Impact on System Architecture
 
@@ -128,17 +133,17 @@ This change significantly enhances the security and modularity of the SahiDawa a
 
 The changes were thoroughly tested to ensure correct role-based gating and functionality.
 
-*   **New Component Test Suite:** A dedicated test suite, `apps/web/tests/admin-dashboard-role-gating.test.tsx`, was introduced to specifically cover the UI and client-side logic for role-gating.
-*   **Supabase Session Mocking:** We mocked the Supabase `createBrowserClient().auth.getSession()` method to simulate various user roles:
-    *   An "admin" user session.
-    *   A "moderator" user session.
-    *   A session with no explicit role (implicitly treated as non-admin/non-moderator).
-*   **Verification Scenarios:**
-    *   **Moderator Access:** Tests confirmed that when a moderator session is mocked, the "Add Medicine" button is not visible, the "Add Medicine" form is not rendered, and the "Actions" column and corresponding action buttons ("Mark Fake", "False Alarm") in the reports table are absent.
-    *   **Admin Access:** Tests verified that when an admin session is mocked, the "Add Medicine" button is visible, the "Add Medicine" form can be toggled, and the "Actions" column and action buttons are present and interactive in the reports table.
-    *   **API Call Integrity:** The existing `tests/adminApi.test.ts` suite, which covers the `PATCH` request path for report mutations, was run alongside the new tests. Its successful completion (as indicated by the `10 tests passed` output) confirms that admin report mutations still send the expected requests without being inadvertently blocked by the new `canMutate` checks.
-*   **Proof of Work:** The author provided a verification run output (`npm run test -w web -- tests/admin-dashboard-role-gating.test.tsx tests/adminApi.test.ts --runInBand`) showing `2 test suites passed, 10 tests passed`, confirming the successful execution of both the new role-gating tests and existing API tests.
-*   **Edge Cases:**
-    *   **Unauthenticated Users:** Handled by the `admin/layout.tsx` which redirects them to the login page.
-    *   **Users with Unknown Roles:** `getAdminRoleFromSession` returns `null` for unrecognized roles, which `canMutateAdminData` correctly interprets as `false`, preventing any mutation capabilities.
-    *   **Client-Side Bypass:** The early `return` statements in `handleReportAction` and `handleAddMedicine` provide a crucial safeguard, ensuring that even if a user somehow manipulates the client-side UI to trigger a mutation, the request will not be sent if their role does not permit it.
+- **New Component Test Suite:** A dedicated test suite, `apps/web/tests/admin-dashboard-role-gating.test.tsx`, was introduced to specifically cover the UI and client-side logic for role-gating.
+- **Supabase Session Mocking:** We mocked the Supabase `createBrowserClient().auth.getSession()` method to simulate various user roles:
+    - An "admin" user session.
+    - A "moderator" user session.
+    - A session with no explicit role (implicitly treated as non-admin/non-moderator).
+- **Verification Scenarios:**
+    - **Moderator Access:** Tests confirmed that when a moderator session is mocked, the "Add Medicine" button is not visible, the "Add Medicine" form is not rendered, and the "Actions" column and corresponding action buttons ("Mark Fake", "False Alarm") in the reports table are absent.
+    - **Admin Access:** Tests verified that when an admin session is mocked, the "Add Medicine" button is visible, the "Add Medicine" form can be toggled, and the "Actions" column and action buttons are present and interactive in the reports table.
+    - **API Call Integrity:** The existing `tests/adminApi.test.ts` suite, which covers the `PATCH` request path for report mutations, was run alongside the new tests. Its successful completion (as indicated by the `10 tests passed` output) confirms that admin report mutations still send the expected requests without being inadvertently blocked by the new `canMutate` checks.
+- **Proof of Work:** The author provided a verification run output (`npm run test -w web -- tests/admin-dashboard-role-gating.test.tsx tests/adminApi.test.ts --runInBand`) showing `2 test suites passed, 10 tests passed`, confirming the successful execution of both the new role-gating tests and existing API tests.
+- **Edge Cases:**
+    - **Unauthenticated Users:** Handled by the `admin/layout.tsx` which redirects them to the login page.
+    - **Users with Unknown Roles:** `getAdminRoleFromSession` returns `null` for unrecognized roles, which `canMutateAdminData` correctly interprets as `false`, preventing any mutation capabilities.
+    - **Client-Side Bypass:** The early `return` statements in `handleReportAction` and `handleAddMedicine` provide a crucial safeguard, ensuring that even if a user somehow manipulates the client-side UI to trigger a mutation, the request will not be sent if their role does not permit it.

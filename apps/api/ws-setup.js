@@ -1,4 +1,11 @@
 "use strict";
+
+// Load environment variables before any application code runs
+require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
+if (!process.env.SUPABASE_URL) {
+    require("dotenv").config();
+}
+
 /**
  * WebSocket polyfill for Node.js < 22.
  *

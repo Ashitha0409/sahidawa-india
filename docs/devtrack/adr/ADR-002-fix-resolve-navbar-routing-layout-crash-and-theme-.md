@@ -12,15 +12,16 @@ Progressive Web App (PWA) support was implemented for the SahiDawa web applicati
 
 ## Alternatives Considered
 
-| Alternative | Why Rejected |
-|---|---|
-| Not implementing PWA support | Would have left the application without an installable option, missing out on enhanced user engagement, offline capabilities, and a native app-like experience. This would limit reach in areas with inconsistent internet access and fail to address the desire for a more integrated user experience on mobile. |
-| Developing a dedicated native mobile application (e.g., Android/iOS) | Requires separate development, maintenance, and deployment pipelines for each platform, significantly increasing development cost, time, and complexity. PWA offers a single codebase approach that leverages existing web technologies, making it a more resource-efficient solution for achieving app-like functionality. |
-| Using a third-party PWA framework or library | The existing Next.js framework provides robust capabilities for PWA implementation with minimal external dependencies. Introducing another framework would add unnecessary complexity, potential compatibility issues, and a steeper learning curve for the team, without providing significant additional benefits over a native Next.js PWA implementation. |
+| Alternative                                                          | Why Rejected                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Not implementing PWA support                                         | Would have left the application without an installable option, missing out on enhanced user engagement, offline capabilities, and a native app-like experience. This would limit reach in areas with inconsistent internet access and fail to address the desire for a more integrated user experience on mobile.                                             |
+| Developing a dedicated native mobile application (e.g., Android/iOS) | Requires separate development, maintenance, and deployment pipelines for each platform, significantly increasing development cost, time, and complexity. PWA offers a single codebase approach that leverages existing web technologies, making it a more resource-efficient solution for achieving app-like functionality.                                   |
+| Using a third-party PWA framework or library                         | The existing Next.js framework provides robust capabilities for PWA implementation with minimal external dependencies. Introducing another framework would add unnecessary complexity, potential compatibility issues, and a steeper learning curve for the team, without providing significant additional benefits over a native Next.js PWA implementation. |
 
 ## Consequences
 
 **Positive:**
+
 - SahiDawa is now installable on Android devices, providing an app-like experience directly from the web browser.
 - Improved user engagement and accessibility through home screen access and potential for offline functionality.
 - Enhanced brand presence with custom app icons and consistent theme integration.
@@ -28,6 +29,7 @@ Progressive Web App (PWA) support was implemented for the SahiDawa web applicati
 - Streamlined development and maintenance compared to native mobile applications, leveraging the existing web codebase.
 
 **Trade-offs:**
+
 - Increased initial bundle size due to the addition of `manifest.json` and multiple icon assets.
 - PWA features and installability can vary slightly across different browsers and operating systems, requiring careful testing and potential workarounds.
 

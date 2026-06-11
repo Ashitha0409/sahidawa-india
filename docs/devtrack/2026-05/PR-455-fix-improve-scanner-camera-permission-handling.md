@@ -19,29 +19,29 @@ Before this PR, the `BarcodeScanner` component experienced issues with camera ac
 The core changes are implemented within the `apps/web/components/scanner/BarcodeScanner.tsx` file, primarily affecting the `BarcodeScanner` functional component.
 
 1.  **New State Variables:**
-    *   A `retryCount` state variable was introduced using `useState(0)`. This counter is crucial for triggering re-initialization of the camera stream.
+    - A `retryCount` state variable was introduced using `useState(0)`. This counter is crucial for triggering re-initialization of the camera stream.
 
 2.  **`handleRetry` Function:**
-    *   A new `handleRetry` function was added. When invoked, it resets the `status` state to `"initializing"`, clears any existing `errorMessage`, and increments the `retryCount` state. The increment of `retryCount` is the key mechanism that forces the `useEffect` hook, responsible for camera initialization, to re-execute.
+    - A new `handleRetry` function was added. When invoked, it resets the `status` state to `"initializing"`, clears any existing `errorMessage`, and increments the `retryCount` state. The increment of `retryCount` is the key mechanism that forces the `useEffect` hook, responsible for camera initialization, to re-execute.
 
 3.  **Browser/Device Capability Check:**
-    *   Within the `useEffect` hook, before attempting to call `navigator.mediaDevices.getUserMedia()`, a check `if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)` was added. If these browser APIs are not available (e.g., in an unsupported browser or non-HTTPS context), the `status` is immediately set to `"unavailable"`, and an informative `errorMessage` ("Camera access is not supported by this browser. Please use HTTPS or a compatible browser.") is displayed. This prevents subsequent errors from attempting unsupported operations.
+    - Within the `useEffect` hook, before attempting to call `navigator.mediaDevices.getUserMedia()`, a check `if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)` was added. If these browser APIs are not available (e.g., in an unsupported browser or non-HTTPS context), the `status` is immediately set to `"unavailable"`, and an informative `errorMessage` ("Camera access is not supported by this browser. Please use HTTPS or a compatible browser.") is displayed. This prevents subsequent errors from attempting unsupported operations.
 
 4.  **Enhanced Error Handling in `try-catch` Block:**
-    *   The `catch` block surrounding the `getUserMedia` call was significantly expanded to differentiate and handle various `MediaStreamError` types:
-        *   **`PermissionDeniedError`**: If the user denies camera access, the `status` is set to `"permission-denied"`, and the `errorMessage` is updated to "Camera access was denied. Please allow camera permissions in your browser settings and try again."
-        *   **`NotFoundError`, `DevicesNotFoundError`, `OverconstrainedError`**: These errors indicate that no suitable camera device was found. The `status` is set to `"unavailable"`, and the `errorMessage` becomes "No suitable camera was found on this device."
-        *   **`NotReadableError`, `TrackStartError`**: These errors typically occur when the camera is already in use by another application or browser tab. The `status` is set to `"error"`, and the `errorMessage` is "Camera is already in use by another application or tab."
-        *   **Generic Errors**: For any other unhandled errors, the `status` is set to `"error"`, and the `errorMessage` defaults to the error's message or a generic "Failed to start the barcode scanner."
+    - The `catch` block surrounding the `getUserMedia` call was significantly expanded to differentiate and handle various `MediaStreamError` types:
+        - **`PermissionDeniedError`**: If the user denies camera access, the `status` is set to `"permission-denied"`, and the `errorMessage` is updated to "Camera access was denied. Please allow camera permissions in your browser settings and try again."
+        - **`NotFoundError`, `DevicesNotFoundError`, `OverconstrainedError`**: These errors indicate that no suitable camera device was found. The `status` is set to `"unavailable"`, and the `errorMessage` becomes "No suitable camera was found on this device."
+        - **`NotReadableError`, `TrackStartError`**: These errors typically occur when the camera is already in use by another application or browser tab. The `status` is set to `"error"`, and the `errorMessage` is "Camera is already in use by another application or tab."
+        - **Generic Errors**: For any other unhandled errors, the `status` is set to `"error"`, and the `errorMessage` defaults to the error's message or a generic "Failed to start the barcode scanner."
 
 5.  **`useEffect` Dependency Array Update:**
-    *   The dependency array of the primary `useEffect` hook (which manages camera initialization and cleanup) was updated to include `retryCount` (`[retryCount]`). This ensures that whenever `handleRetry` is called and `retryCount` increments, the effect re-runs, effectively re-attempting camera initialization.
+    - The dependency array of the primary `useEffect` hook (which manages camera initialization and cleanup) was updated to include `retryCount` (`[retryCount]`). This ensures that whenever `handleRetry` is called and `retryCount` increments, the effect re-runs, effectively re-attempting camera initialization.
 
 6.  **UI Integration for Retry:**
-    *   The "Retry" buttons displayed when `status` is `"permission-denied"` or `"error"` were updated. Their `onClick` handlers now call the new `handleRetry` function instead of the previous `window.location.reload()`, providing a seamless retry experience.
+    - The "Retry" buttons displayed when `status` is `"permission-denied"` or `"error"` were updated. Their `onClick` handlers now call the new `handleRetry` function instead of the previous `window.location.reload()`, providing a seamless retry experience.
 
 7.  **Camera Stream Cleanup:**
-    *   The existing cleanup function within the `useEffect` (`streamRef.current?.getTracks().forEach((track) => track.stop());`) remains crucial. It ensures that all active camera tracks are stopped when the component unmounts or when the `useEffect` re-runs (e.g., due to `retryCount` change), preventing resource leaks and ensuring the camera is released for other applications.
+    - The existing cleanup function within the `useEffect` (`streamRef.current?.getTracks().forEach((track) => track.stop());`) remains crucial. It ensures that all active camera tracks are stopped when the component unmounts or when the `useEffect` re-runs (e.g., due to `retryCount` change), preventing resource leaks and ensuring the camera is released for other applications.
 
 ## Technical Decisions
 
@@ -55,51 +55,53 @@ The core changes are implemented within the `apps/web/components/scanner/Barcode
 To re-implement or deeply understand the camera permission handling in `BarcodeScanner.tsx`, follow these steps:
 
 1.  **Component Setup:**
-    *   Start with a React functional component, e.g., `BarcodeScanner`.
-    *   Initialize `useState` hooks for `status` (e.g., `"initializing"`, `"ready"`, `"permission-denied"`, `"unavailable"`, `"error"`), `errorMessage`, `hasTorch`, `torchOn`, and crucially, `retryCount` (defaulting to `0`).
-    *   Use `useRef` for `videoRef` (to attach the video stream to a `<video>` element) and `streamRef` (to hold the `MediaStream` object for direct manipulation and cleanup).
+    - Start with a React functional component, e.g., `BarcodeScanner`.
+    - Initialize `useState` hooks for `status` (e.g., `"initializing"`, `"ready"`, `"permission-denied"`, `"unavailable"`, `"error"`), `errorMessage`, `hasTorch`, `torchOn`, and crucially, `retryCount` (defaulting to `0`).
+    - Use `useRef` for `videoRef` (to attach the video stream to a `<video>` element) and `streamRef` (to hold the `MediaStream` object for direct manipulation and cleanup).
 
 2.  **Implement `handleRetry`:**
-    *   Define an `handleRetry` function that sets `setStatus("initializing")`, `setErrorMessage("")`, and `setRetryCount((prev) => prev + 1)`. This function will be called when the user attempts to re-initialize the scanner.
+    - Define an `handleRetry` function that sets `setStatus("initializing")`, `setErrorMessage("")`, and `setRetryCount((prev) => prev + 1)`. This function will be called when the user attempts to re-initialize the scanner.
 
 3.  **Camera Initialization `useEffect`:**
-    *   Create a `useEffect` hook. Its dependency array must include `[retryCount]` to ensure re-initialization on retry attempts.
-    *   Inside the effect, define an `async` function (e.g., `initializeScanner`) to encapsulate the camera setup logic.
-    *   **Cleanup Function:** The `useEffect` must return a cleanup function. This function is critical for releasing camera resources: `streamRef.current?.getTracks().forEach((track) => track.stop());`. This prevents resource leaks and ensures the camera is available for other applications.
+    - Create a `useEffect` hook. Its dependency array must include `[retryCount]` to ensure re-initialization on retry attempts.
+    - Inside the effect, define an `async` function (e.g., `initializeScanner`) to encapsulate the camera setup logic.
+    - **Cleanup Function:** The `useEffect` must return a cleanup function. This function is critical for releasing camera resources: `streamRef.current?.getTracks().forEach((track) => track.stop());`. This prevents resource leaks and ensures the camera is available for other applications.
 
 4.  **Browser Capability Check:**
-    *   Within `initializeScanner`, add an initial check:
+    - Within `initializeScanner`, add an initial check:
         ```typescript
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             setStatus("unavailable");
-            setErrorMessage("Camera access is not supported by this browser. Please use HTTPS or a compatible browser.");
+            setErrorMessage(
+                "Camera access is not supported by this browser. Please use HTTPS or a compatible browser."
+            );
             return;
         }
         ```
 
 5.  **Acquire Camera Stream (`getUserMedia`):**
-    *   Wrap the `getUserMedia` calls in a `try-catch` block.
-    *   Attempt to acquire the rear camera first: `navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })`.
-    *   If that fails, fall back to any available camera: `navigator.mediaDevices.getUserMedia({ video: true })`.
-    *   Assign the resulting `MediaStream` to `streamRef.current` and `videoRef.current.srcObject`.
-    *   Once the stream is acquired, set `setStatus("ready")`.
+    - Wrap the `getUserMedia` calls in a `try-catch` block.
+    - Attempt to acquire the rear camera first: `navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })`.
+    - If that fails, fall back to any available camera: `navigator.mediaDevices.getUserMedia({ video: true })`.
+    - Assign the resulting `MediaStream` to `streamRef.current` and `videoRef.current.srcObject`.
+    - Once the stream is acquired, set `setStatus("ready")`.
 
 6.  **Detailed Error Handling:**
-    *   In the `catch (error)` block of `getUserMedia`:
-        *   Cast `error` to `DOMException` or `MediaStreamError` for specific `name` property checks.
-        *   **Permission Denied:** `if (error.name === "PermissionDeniedError")`: Set `setStatus("permission-denied")` and `setErrorMessage("Camera access was denied. Please allow camera permissions in your browser settings and try again.")`.
-        *   **No Camera Found:** `else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError" || error.name === "OverconstrainedError")`: Set `setStatus("unavailable")` and `setErrorMessage("No suitable camera was found on this device.")`.
-        *   **Camera In Use:** `else if (error.name === "NotReadableError" || error.name === "TrackStartError")`: Set `setStatus("error")` and `setErrorMessage("Camera is already in use by another application or tab.")`.
-        *   **Generic Error:** `else`: Set `setStatus("error")` and `setErrorMessage(error.message || "Failed to start the barcode scanner.")`.
+    - In the `catch (error)` block of `getUserMedia`:
+        - Cast `error` to `DOMException` or `MediaStreamError` for specific `name` property checks.
+        - **Permission Denied:** `if (error.name === "PermissionDeniedError")`: Set `setStatus("permission-denied")` and `setErrorMessage("Camera access was denied. Please allow camera permissions in your browser settings and try again.")`.
+        - **No Camera Found:** `else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError" || error.name === "OverconstrainedError")`: Set `setStatus("unavailable")` and `setErrorMessage("No suitable camera was found on this device.")`.
+        - **Camera In Use:** `else if (error.name === "NotReadableError" || error.name === "TrackStartError")`: Set `setStatus("error")` and `setErrorMessage("Camera is already in use by another application or tab.")`.
+        - **Generic Error:** `else`: Set `setStatus("error")` and `setErrorMessage(error.message || "Failed to start the barcode scanner.")`.
 
 7.  **UI Conditional Rendering:**
-    *   Based on the `status` state, conditionally render different UI elements:
-        *   `status === "initializing"`: Show a loading spinner.
-        *   `status === "ready"`: Render the `<video>` element (attached to `videoRef`) and any scanner controls (e.g., torch toggle).
-        *   `status === "permission-denied"` or `status === "error"` or `status === "unavailable"`: Display the `errorMessage` and a "Retry" button whose `onClick` handler calls `handleRetry`.
+    - Based on the `status` state, conditionally render different UI elements:
+        - `status === "initializing"`: Show a loading spinner.
+        - `status === "ready"`: Render the `<video>` element (attached to `videoRef`) and any scanner controls (e.g., torch toggle).
+        - `status === "permission-denied"` or `status === "error"` or `status === "unavailable"`: Display the `errorMessage` and a "Retry" button whose `onClick` handler calls `handleRetry`.
 
 8.  **Torch Control (if applicable):**
-    *   Implement a `toggleTorch` function that checks `streamRef.current.getVideoTracks()[0].getCapabilities().torch` and uses `applyConstraints({ advanced: [{ torch: !torchOn }] })` to control the camera's torch.
+    - Implement a `toggleTorch` function that checks `streamRef.current.getVideoTracks()[0].getCapabilities().torch` and uses `applyConstraints({ advanced: [{ torch: !torchOn }] })` to control the camera's torch.
 
 ## Impact on System Architecture
 
@@ -113,18 +115,20 @@ This PR significantly enhances the robustness and user experience of the `Barcod
 ## Testing & Verification
 
 **Manual Testing:**
-*   **Successful Initialization:** Verified that the scanner initializes correctly and begins scanning on various desktop and mobile devices (Android, iOS) across supported browsers (Chrome, Firefox, Safari).
-*   **Camera Permission Denial:** Tested scenarios where the user explicitly denies camera permission. The system correctly displayed the "Camera access was denied. Please allow camera permissions in your browser settings and try again." message and presented a "Retry" button.
-*   **Retry Functionality:** Confirmed that clicking the "Retry" button after a permission denial or other error successfully re-initializes the scanner without requiring a full page reload, prompting for permissions again if necessary.
-*   **No Camera Device:** Tested on devices without a camera or with disabled cameras. The system correctly displayed "No suitable camera was found on this device."
-*   **Camera In Use:** Verified the handling when the camera was already in use by another application or browser tab. The system displayed "Camera is already in use by another application or tab."
-*   **Unsupported Browser/Environment:** Tested in environments where `navigator.mediaDevices` is not available (e.g., older browsers or non-HTTPS contexts in some browsers). The system correctly rendered the fallback UI with the message "Camera access is not supported by this browser. Please use HTTPS or a compatible browser."
-*   **Stream Cleanup:** Verified that navigating away from the scanner page or component unmounts properly released the camera resource, allowing other applications to access it.
+
+- **Successful Initialization:** Verified that the scanner initializes correctly and begins scanning on various desktop and mobile devices (Android, iOS) across supported browsers (Chrome, Firefox, Safari).
+- **Camera Permission Denial:** Tested scenarios where the user explicitly denies camera permission. The system correctly displayed the "Camera access was denied. Please allow camera permissions in your browser settings and try again." message and presented a "Retry" button.
+- **Retry Functionality:** Confirmed that clicking the "Retry" button after a permission denial or other error successfully re-initializes the scanner without requiring a full page reload, prompting for permissions again if necessary.
+- **No Camera Device:** Tested on devices without a camera or with disabled cameras. The system correctly displayed "No suitable camera was found on this device."
+- **Camera In Use:** Verified the handling when the camera was already in use by another application or browser tab. The system displayed "Camera is already in use by another application or tab."
+- **Unsupported Browser/Environment:** Tested in environments where `navigator.mediaDevices` is not available (e.g., older browsers or non-HTTPS contexts in some browsers). The system correctly rendered the fallback UI with the message "Camera access is not supported by this browser. Please use HTTPS or a compatible browser."
+- **Stream Cleanup:** Verified that navigating away from the scanner page or component unmounts properly released the camera resource, allowing other applications to access it.
 
 **Edge Cases:**
-*   User denies permission, then later grants it via browser settings, then retries.
-*   Camera becomes unavailable mid-scan (e.g., another app takes over).
-*   Rapid mounting/unmounting of the component to test cleanup robustness.
+
+- User denies permission, then later grants it via browser settings, then retries.
+- Camera becomes unavailable mid-scan (e.g., another app takes over).
+- Rapid mounting/unmounting of the component to test cleanup robustness.
 
 **Unit Tests:** Not documented in this PR.
 **Integration Tests:** Not documented in this PR.

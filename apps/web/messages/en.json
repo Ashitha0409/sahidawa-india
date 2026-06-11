@@ -656,7 +656,7 @@
         "nav_schedule": "Medicine Schedule",
         "nav_profile": "My Profile"
     },
-    "howItWorks":{
+    "howItWorks": {
         "badge": "Safe Healthcare • AI Powered",
         "heroTitle": "How <highlight>SahiDawa</highlight> Works",
         "heroSubtitle": "Learn how SahiDawa helps users verify medicines, discover trusted pharmacies, receive official alerts, and stay protected from counterfeit drugs using AI-powered healthcare tools.",
@@ -757,5 +757,49 @@
             "pregnancyHeading": "Pregnancy"
         },
         "disclaimer": "This information is educational and does not replace professional medical advice."
+    },
+    "abha": {
+        "title": "Link Ayushman Bharat Health Account (ABHA)",
+        "subtitle": "Connect your ABHA ID to store medicine verification history, sync prescription records, and share verified medicine data with healthcare providers.",
+        "step1_title": "Step 1: Enter ABHA Address",
+        "step1_desc": "Enter your ABHA Address (e.g. username@abdm) to link your account. If you don't have one, you can create one on the ABDM portal.",
+        "abha_address_label": "ABHA Address",
+        "abha_address_placeholder": "e.g. username@abdm",
+        "send_otp": "Send OTP",
+        "step2_title": "Step 2: OTP Verification",
+        "step2_desc": "A 6-digit OTP has been sent for verification. (Use 123456 for testing).",
+        "otp_label": "Enter OTP",
+        "verify_otp": "Verify & Link",
+        "step3_title": "Step 3: Account Linked!",
+        "step3_desc": "Your ABHA account has been successfully linked to SahiDawa.",
+        "linked_address": "Linked ABHA Address",
+        "linked_number": "ABHA Number",
+        "view_records": "View Health Records",
+        "unlink": "Unlink ABHA Account",
+        "unlinked_success": "ABHA account unlinked successfully.",
+        "linked_badge": "ABHA Linked",
+        "not_linked_badge": "ABHA Not Linked",
+        "link_now": "Link ABHA",
+        "save_to_abha": "Save to ABHA Record",
+        "saving": "Saving...",
+        "saved": "Saved to ABHA!",
+        "save_failed": "Failed to save",
+        "records_title": "Your ABHA Health Records",
+        "records_subtitle": "View your timeline of medicine scans, prescriptions, and verified health records synchronized with the ABDM network.",
+        "no_records": "No records found. Link your ABHA and scan medicines or fetch prescriptions to see them here.",
+        "fetch_prescriptions": "Fetch Prescriptions",
+        "fetching": "Fetching...",
+        "prescriptions_fetched": "Prescriptions fetched successfully",
+        "record_type_verification": "Medicine Verification",
+        "record_type_prescription": "Prescription Record",
+        "scanned_on": "Scanned on",
+        "synced_on": "Synced on",
+        "doctor": "Doctor",
+        "hospital": "Hospital",
+        "medicines": "Medicines",
+        "medicine_name": "Medicine Name",
+        "dosage": "Dosage",
+        "frequency": "Frequency",
+        "back_to_profile": "Back to Profile"
     }
 }

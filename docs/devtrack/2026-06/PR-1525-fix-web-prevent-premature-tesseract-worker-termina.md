@@ -21,18 +21,18 @@ Additionally, the `handleBarcodeScan` and `processVerificationResult` functions 
 The core of this change involves refactoring the lifecycle management of the Tesseract OCR Web Worker and stabilizing key functions within the `ScanPage` component.
 
 1.  **Tesseract Worker Lifetime Fix**:
-    *   The `ocrWorkerRef.current.terminate()` call was moved from the cleanup function of the `useEffect` hook at `apps/web/app/[locale]/scan/page.tsx:L557-561` (which had `[showResult, verifyError, batchInput, registerRetryCallback, unregisterRetryCallback]` as dependencies) into a *new*, dedicated `useEffect` hook at `apps/web/app/[locale]/scan/page.tsx:L565-574`.
-    *   This new `useEffect` has an empty dependency array (`[]`), ensuring its cleanup function (which terminates the worker) runs only once when the `ScanPage` component unmounts. A `console.log("Tesseract worker terminated on ScanPage unmount")` was added for verification.
+    - The `ocrWorkerRef.current.terminate()` call was moved from the cleanup function of the `useEffect` hook at `apps/web/app/[locale]/scan/page.tsx:L557-561` (which had `[showResult, verifyError, batchInput, registerRetryCallback, unregisterRetryCallback]` as dependencies) into a _new_, dedicated `useEffect` hook at `apps/web/app/[locale]/scan/page.tsx:L565-574`.
+    - This new `useEffect` has an empty dependency array (`[]`), ensuring its cleanup function (which terminates the worker) runs only once when the `ScanPage` component unmounts. A `console.log("Tesseract worker terminated on ScanPage unmount")` was added for verification.
 
 2.  **Hook Reference Stabilization**:
-    *   The `processVerificationResult` async function, responsible for handling the outcome of a verification attempt, was wrapped in a `useCallback` hook at `apps/web/app/[locale]/scan/page.tsx:L586-642`. It was given an empty dependency array (`[]`) to ensure its reference remains stable across renders, preventing unnecessary re-creations.
-    *   The `handleVerify` function, which orchestrates the medicine verification process, was already wrapped in `useCallback`. Its dependency array was updated from `[processVerificationResult, recordScanHistory]` to `[processVerificationResult]` at `apps/web/app/[locale]/scan/page.tsx:L772`, reflecting the removal of `recordScanHistory`.
-    *   The `handleBarcodeScan` function, which processes detected barcodes, was not explicitly wrapped in `useCallback` in the provided diff, but its internal call to `handleVerify` was updated to remove the `source` parameter at `apps/web/app/[locale]/scan/page.tsx:L874`. The PR description mentions `handleBarcodeScan` was wrapped in `useCallback` to match a dangling dependency array, implying a previous state or an implicit change not fully captured in the diff provided. Based on the diff, `handleVerify`'s signature was changed, which `handleBarcodeScan` now correctly calls.
+    - The `processVerificationResult` async function, responsible for handling the outcome of a verification attempt, was wrapped in a `useCallback` hook at `apps/web/app/[locale]/scan/page.tsx:L586-642`. It was given an empty dependency array (`[]`) to ensure its reference remains stable across renders, preventing unnecessary re-creations.
+    - The `handleVerify` function, which orchestrates the medicine verification process, was already wrapped in `useCallback`. Its dependency array was updated from `[processVerificationResult, recordScanHistory]` to `[processVerificationResult]` at `apps/web/app/[locale]/scan/page.tsx:L772`, reflecting the removal of `recordScanHistory`.
+    - The `handleBarcodeScan` function, which processes detected barcodes, was not explicitly wrapped in `useCallback` in the provided diff, but its internal call to `handleVerify` was updated to remove the `source` parameter at `apps/web/app/[locale]/scan/page.tsx:L874`. The PR description mentions `handleBarcodeScan` was wrapped in `useCallback` to match a dangling dependency array, implying a previous state or an implicit change not fully captured in the diff provided. Based on the diff, `handleVerify`'s signature was changed, which `handleBarcodeScan` now correctly calls.
 
 3.  **Obsolete History Reference Cleanup**:
-    *   Imports related to the old local scan history mechanism (`buildLocalScanHistoryEntry`, `saveLocalScanHistoryEntry`, `BuildLocalScanHistoryEntryOptions`, `LocalScanHistorySource`) were removed from `apps/web/app/[locale]/scan/page.tsx:L45-50`.
-    *   The type definition for `handleVerifyRef` was updated at `apps/web/app/[locale]/scan/page.tsx:L538-542` to remove the `source` parameter, aligning with the removal of `LocalScanHistorySource`.
-    *   All instances where `recordScanHistory` was previously called (e.g., in error handling paths within `handleConfirmScanned`, `handleVerify`, and the OCR processing logic) were replaced with direct calls to `saveScanHistory` or by passing the relevant data to `processVerificationResult`. This also involved removing the `ScanHistoryContext` object parameters that were previously passed to `processVerificationResult` and `recordScanHistory` (e.g., `query`, `source`, `fallbackBrandName`, etc.) as the `saveScanHistory` function now directly accepts the necessary `id`, `timestamp`, `medicineName`, and `status`.
+    - Imports related to the old local scan history mechanism (`buildLocalScanHistoryEntry`, `saveLocalScanHistoryEntry`, `BuildLocalScanHistoryEntryOptions`, `LocalScanHistorySource`) were removed from `apps/web/app/[locale]/scan/page.tsx:L45-50`.
+    - The type definition for `handleVerifyRef` was updated at `apps/web/app/[locale]/scan/page.tsx:L538-542` to remove the `source` parameter, aligning with the removal of `LocalScanHistorySource`.
+    - All instances where `recordScanHistory` was previously called (e.g., in error handling paths within `handleConfirmScanned`, `handleVerify`, and the OCR processing logic) were replaced with direct calls to `saveScanHistory` or by passing the relevant data to `processVerificationResult`. This also involved removing the `ScanHistoryContext` object parameters that were previously passed to `processVerificationResult` and `recordScanHistory` (e.g., `query`, `source`, `fallbackBrandName`, etc.) as the `saveScanHistory` function now directly accepts the necessary `id`, `timestamp`, `medicineName`, and `status`.
 
 ## Technical Decisions
 
@@ -47,9 +47,10 @@ The removal of `recordScanHistory` references was a necessary cleanup. This func
 To re-implement these changes or similar lifecycle management for Web Workers and function memoization in React:
 
 1.  **Web Worker Lifecycle Management**:
-    *   When using Web Workers (like Tesseract.js), initialize them once, typically in a `useRef` to maintain a mutable reference across renders without triggering re-renders.
-    *   For cleanup, use a `useEffect` hook with an empty dependency array (`[]`). The `return` function of this `useEffect` will act as the `componentWillUnmount` equivalent. Inside this cleanup, call `workerRef.current.terminate()` to properly shut down the worker.
-    *   Example pattern:
+    - When using Web Workers (like Tesseract.js), initialize them once, typically in a `useRef` to maintain a mutable reference across renders without triggering re-renders.
+    - For cleanup, use a `useEffect` hook with an empty dependency array (`[]`). The `return` function of this `useEffect` will act as the `componentWillUnmount` equivalent. Inside this cleanup, call `workerRef.current.terminate()` to properly shut down the worker.
+    - Example pattern:
+
         ```typescript
         const ocrWorkerRef = useRef<Worker | null>(null);
 
@@ -64,24 +65,30 @@ To re-implement these changes or similar lifecycle management for Web Workers an
             };
         }, []); // Empty dependency array ensures cleanup only on unmount
         ```
-    *   Avoid placing worker termination in `useEffect` hooks with dynamic dependencies if the worker should persist across those dependency changes.
+
+    - Avoid placing worker termination in `useEffect` hooks with dynamic dependencies if the worker should persist across those dependency changes.
 
 2.  **Function Memoization with `useCallback`**:
-    *   Identify functions that are passed as props to child components, or are dependencies of other `useCallback`/`useMemo` hooks, or are computationally expensive.
-    *   Wrap these functions in `useCallback`.
-    *   Carefully define the dependency array for `useCallback`. If the function relies on state, props, or other functions, include them in the dependency array. An empty array `[]` means the function never changes its reference.
-    *   Example:
+    - Identify functions that are passed as props to child components, or are dependencies of other `useCallback`/`useMemo` hooks, or are computationally expensive.
+    - Wrap these functions in `useCallback`.
+    - Carefully define the dependency array for `useCallback`. If the function relies on state, props, or other functions, include them in the dependency array. An empty array `[]` means the function never changes its reference.
+    - Example:
         ```typescript
-        const processVerificationResult = useCallback(async (result: VerifyResult, fallbackBrandName?: string) => {
-            // ... logic ...
-            void saveScanHistory({ /* ... */ });
-        }, []); // Dependencies for processVerificationResult
+        const processVerificationResult = useCallback(
+            async (result: VerifyResult, fallbackBrandName?: string) => {
+                // ... logic ...
+                void saveScanHistory({
+                    /* ... */
+                });
+            },
+            []
+        ); // Dependencies for processVerificationResult
         ```
 
 3.  **API Migration and Cleanup**:
-    *   When an API or utility function is deprecated or removed (e.g., `recordScanHistory` replaced by `saveScanHistory`), ensure all references throughout the codebase are updated.
-    *   Remove obsolete imports and type definitions associated with the old API.
-    *   Update function signatures and call sites to match the new API's requirements. For instance, `handleVerify`'s signature was simplified from `(batch: string, source: LocalScanHistorySource)` to `(batch: string)` because the `source` parameter was no longer needed by the new history saving mechanism.
+    - When an API or utility function is deprecated or removed (e.g., `recordScanHistory` replaced by `saveScanHistory`), ensure all references throughout the codebase are updated.
+    - Remove obsolete imports and type definitions associated with the old API.
+    - Update function signatures and call sites to match the new API's requirements. For instance, `handleVerify`'s signature was simplified from `(batch: string, source: LocalScanHistorySource)` to `(batch: string)` because the `source` parameter was no longer needed by the new history saving mechanism.
 
 ## Impact on System Architecture
 
@@ -95,6 +102,7 @@ The following verification steps were performed:
 
 1.  **TypeScript Verification**: The modified file `apps/web/app/[locale]/scan/page.tsx` was compiled using `npx tsc --noEmit`, confirming zero TypeScript errors. This validated the removal of obsolete `recordScanHistory` references and the updated function signatures.
 2.  **Local Test Output**: Existing Jest tests for scan history (`tests/localScanHistory.test.ts` and `tests/localScanHistoryList.test.tsx`) were run successfully, indicating that the changes to history saving logic did not introduce regressions.
+
     ```bash
     $ npx jest tests/localScanHistory.test.ts tests/localScanHistoryList.test.tsx
     PASS tests/localScanHistoryList.test.tsx
@@ -105,17 +113,18 @@ The following verification steps were performed:
     Snapshots:   0 total
     Time:        1.367 s
     ```
+
 3.  **Worker Lifetime Verification Log**: A `console.log` statement was added to the new unmount-only `useEffect` hook:
     ```typescript
-        useEffect(() => {
-            return () => {
-                console.log("Tesseract worker terminated on ScanPage unmount");
-                if (ocrWorkerRef.current) {
-                    ocrWorkerRef.current.terminate();
-                    ocrWorkerRef.current = null;
-                }
-            };
-        }, []);
+    useEffect(() => {
+        return () => {
+            console.log("Tesseract worker terminated on ScanPage unmount");
+            if (ocrWorkerRef.current) {
+                ocrWorkerRef.current.terminate();
+                ocrWorkerRef.current = null;
+            }
+        };
+    }, []);
     ```
     When navigating away from the `ScanPage`, the console correctly displayed `Tesseract worker terminated on ScanPage unmount`, confirming that the worker termination now occurs only upon component unmount, as intended.
 

@@ -11,6 +11,7 @@ The SahiDawa platform aimed to improve accessibility for rural Indian users by e
 A new `/asr/transcribe` endpoint was added to the existing `apps/ml` FastAPI service. This endpoint accepts audio file uploads (supporting `wav`, `mp3`, `ogg`, `webm`, `flac`) and returns the transcribed text, detected language, language code, and confidence probability.
 
 The implementation details included:
+
 - **Model Selection:** The `faster-whisper` "medium" model was chosen for its balance of accuracy, particularly for Indian regional languages, and performance.
 - **Compute Optimization:** `compute_type="int8"` was used to optimize the model for CPU execution, ensuring efficiency without requiring dedicated GPU resources.
 - **Audio Preprocessing:** Voice Activity Detection (VAD) was integrated to handle silence and pauses, and `noisereduce` was applied to mitigate background noise, improving transcription accuracy in real-world audio environments.
@@ -20,15 +21,16 @@ The implementation details included:
 
 ## Alternatives Considered
 
-| Alternative | Why Rejected |
-|---|---|
-| **Smaller `faster-whisper` models (e.g., `small`, `base`)** | Rejected due to lower reported accuracy on the diverse range of Indian regional languages, which was a critical requirement for the platform's target users. The "medium" model offered a better accuracy-to-resource trade-off. |
+| Alternative                                                                      | Why Rejected                                                                                                                                                                                                                                                            |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Smaller `faster-whisper` models (e.g., `small`, `base`)**                      | Rejected due to lower reported accuracy on the diverse range of Indian regional languages, which was a critical requirement for the platform's target users. The "medium" model offered a better accuracy-to-resource trade-off.                                        |
 | **Cloud-based ASR services (e.g., Google Cloud Speech-to-Text, AWS Transcribe)** | Rejected primarily due to cost implications for an open-source, free platform, potential data privacy concerns for sensitive health information being sent to third-party services, and potential latency issues for rural users with unreliable internet connectivity. |
-| **No audio preprocessing (VAD, noise reduction)** | Rejected because it would significantly degrade transcription accuracy, especially in the noisy environments typical of rural settings, leading to a poorer user experience and less reliable symptom capture. |
+| **No audio preprocessing (VAD, noise reduction)**                                | Rejected because it would significantly degrade transcription accuracy, especially in the noisy environments typical of rural settings, leading to a poorer user experience and less reliable symptom capture.                                                          |
 
 ## Consequences
 
 **Positive:**
+
 - Significantly improved accessibility for rural users by removing the English typing barrier, enabling voice input in native Indian languages.
 - Enhanced user experience by providing a more natural and intuitive way to interact with the SahiDawa platform.
 - Leveraged existing `apps/ml` service architecture, maintaining consistency and reducing deployment complexity.
@@ -36,6 +38,7 @@ The implementation details included:
 - Integrated VAD and noise reduction improved the quality and reliability of transcriptions from real-world audio.
 
 **Trade-offs:**
+
 - Increased resource consumption (CPU and RAM) on the `apps/ml` service due to running the "medium" ASR model and audio preprocessing.
 - Introduced new external dependencies (`ffmpeg`, `libsndfile1`) requiring updates to the Docker build process and image size.
 - The chosen ASR model has a known upstream limitation in acoustically distinguishing Hindi and Urdu, which was accepted given their linguistic similarities and the context of symptom reporting.

@@ -48,10 +48,10 @@ Integrating the new locale into the `routing.ts` and `proxy.ts` files ensures th
 To add a new language, say "XYZ" with code "xy", to the SahiDawa web application, a contributor would follow these steps:
 
 1.  **Create the Message File:**
-    *   Create a new JSON file: `apps/web/messages/xy.json`.
-    *   Populate this file with all the necessary key-value pairs for the UI strings. It's recommended to copy an existing language file (e.g., `en.json`) as a template and replace the values with the new language's translations.
-    *   Ensure the translations are natural, conversational, and contextually appropriate for the target audience, reflecting modern app terminology.
-    *   Example structure:
+    - Create a new JSON file: `apps/web/messages/xy.json`.
+    - Populate this file with all the necessary key-value pairs for the UI strings. It's recommended to copy an existing language file (e.g., `en.json`) as a template and replace the values with the new language's translations.
+    - Ensure the translations are natural, conversational, and contextually appropriate for the target audience, reflecting modern app terminology.
+    - Example structure:
         ```json
         {
             "Home": {
@@ -66,20 +66,20 @@ To add a new language, say "XYZ" with code "xy", to the SahiDawa web application
         ```
 
 2.  **Register the Locale for Routing:**
-    *   Open `apps/web/i18n/routing.ts`.
-    *   Locate the `locales` array within the `defineRouting` function.
-    *   Add the new language code `'xy'` to this array.
-    *   Example diff:
+    - Open `apps/web/i18n/routing.ts`.
+    - Locate the `locales` array within the `defineRouting` function.
+    - Add the new language code `'xy'` to this array.
+    - Example diff:
         ```diff
         -  locales: ['en', 'ta', 'bn', 'te', 'mr', 'gu', 'ur'],
         +  locales: ['en', 'ta', 'bn', 'te', 'mr', 'gu', 'ur', 'xy'],
         ```
 
 3.  **Update the Language Switcher UI:**
-    *   Open `apps/web/app/[locale]/LanguageSwitcher.tsx`.
-    *   Locate the `languages` array.
-    *   Add a new object for the new language, including its code, label, and native name.
-    *   Example diff:
+    - Open `apps/web/app/[locale]/LanguageSwitcher.tsx`.
+    - Locate the `languages` array.
+    - Add a new object for the new language, including its code, label, and native name.
+    - Example diff:
         ```diff
         -  { code: "ur", label: "Urdu", native: "اردو" }
         +  { code: "ur", label: "Urdu", native: "اردو" },
@@ -87,20 +87,20 @@ To add a new language, say "XYZ" with code "xy", to the SahiDawa web application
         ```
 
 4.  **Configure the i18n Middleware:**
-    *   Open `apps/web/proxy.ts`.
-    *   Locate the `matcher` property within the `config` object.
-    *   Add the new language code `'xy'` to the regular expression.
-    *   Example diff:
+    - Open `apps/web/proxy.ts`.
+    - Locate the `matcher` property within the `config` object.
+    - Add the new language code `'xy'` to the regular expression.
+    - Example diff:
         ```diff
         -  matcher: ['/', '/(ta|en|bn|te|mr|gu|ur)/:path*']
         +  matcher: ['/', '/(ta|en|bn|te|mr|gu|ur|xy)/:path*']
         ```
 
 5.  **Verify Locally:**
-    *   Run the application locally (`npm run dev` or `yarn dev`).
-    *   Navigate to the application and use the language switcher to select the newly added language.
-    *   Verify that all UI elements display the correct translations and that routing works as expected (e.g., `/xy/home`).
-    *   Check for any console errors related to missing translations or routing issues.
+    - Run the application locally (`npm run dev` or `yarn dev`).
+    - Navigate to the application and use the language switcher to select the newly added language.
+    - Verify that all UI elements display the correct translations and that routing works as expected (e.g., `/xy/home`).
+    - Check for any console errors related to missing translations or routing issues.
 
 This process ensures that the `next-intl` library correctly identifies, loads, and serves the new language across the application.
 
@@ -129,8 +129,8 @@ The following steps were taken to test and verify this change:
 
 **Edge Cases (Not documented in this PR, but typically considered):**
 
-*   **Missing Translations:** What happens if a key is present in `en.json` but missing in `od.json`? Our `next-intl` setup typically falls back to the `defaultLocale` (English) or displays the key itself, which would be an important check.
-*   **Dynamic Content:** If any content is dynamically loaded or generated, ensuring it respects the active Odia locale.
-*   **Text Overflow/Layout Issues:** Odia text can have different lengths and character widths compared to English, which might lead to UI elements overflowing or misaligning. Visual inspection across different screen sizes would typically address this.
-*   **Accessibility (Screen Readers):** Ensuring that screen readers correctly announce Odia text and that the `lang` attribute is correctly set on the `<html>` tag for accessibility tools.
-*   **Browser Compatibility:** Verifying that Odia fonts render correctly across different browsers and operating systems.
+- **Missing Translations:** What happens if a key is present in `en.json` but missing in `od.json`? Our `next-intl` setup typically falls back to the `defaultLocale` (English) or displays the key itself, which would be an important check.
+- **Dynamic Content:** If any content is dynamically loaded or generated, ensuring it respects the active Odia locale.
+- **Text Overflow/Layout Issues:** Odia text can have different lengths and character widths compared to English, which might lead to UI elements overflowing or misaligning. Visual inspection across different screen sizes would typically address this.
+- **Accessibility (Screen Readers):** Ensuring that screen readers correctly announce Odia text and that the `lang` attribute is correctly set on the `<html>` tag for accessibility tools.
+- **Browser Compatibility:** Verifying that Odia fonts render correctly across different browsers and operating systems.

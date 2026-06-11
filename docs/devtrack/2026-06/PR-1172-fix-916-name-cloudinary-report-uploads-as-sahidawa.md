@@ -1,4 +1,4 @@
-# PR #1172 — fix(#916): name Cloudinary report uploads as sahidawa/reports/{batch_number}_{timestamp}
+# PR #1172 — fix(#916): name Cloudinary report uploads as sahidawa/reports/{batch*number}*{timestamp}
 
 > **Merged:** 2026-06-03 | **Author:** @aryan-nmaurya | **Area:** Frontend | **Impact Score:** 8 | **Closes:** #916
 
@@ -20,26 +20,27 @@ Previously, when report images were uploaded to Cloudinary via our server-signed
 The core of this change resides within the `POST` handler of `apps/web/app/api/upload/route.ts`.
 
 1.  **`public_id` Generation:**
-    *   Before constructing the Cloudinary signature, we now determine the `public_id`.
-    *   The `rawBatchNumber` is extracted from the incoming `formData` using `formData.get("batch_number")`. It is typed as `string | null` and defaults to an empty string if not present.
-    *   A critical sanitization step is applied: `rawBatchNumber.replace(/[^A-Za-z0-9._-]/g, "")`. This regular expression strips any characters that are not alphanumeric, periods, underscores, or hyphens. This prevents potential path traversal vulnerabilities or the injection of invalid characters that could disrupt Cloudinary's file path interpretation.
-    *   If the `batchNumber` (after sanitization) is empty, it falls back to the string `"report"`.
-    *   The final `publicId` is then constructed by concatenating the sanitized `batchNumber` with the existing `timestamp` (which is `Math.round(new Date().getTime() / 1000).toString()`) using an underscore: `` `${batchNumber}_${timestamp}` ``.
+    - Before constructing the Cloudinary signature, we now determine the `public_id`.
+    - The `rawBatchNumber` is extracted from the incoming `formData` using `formData.get("batch_number")`. It is typed as `string | null` and defaults to an empty string if not present.
+    - A critical sanitization step is applied: `rawBatchNumber.replace(/[^A-Za-z0-9._-]/g, "")`. This regular expression strips any characters that are not alphanumeric, periods, underscores, or hyphens. This prevents potential path traversal vulnerabilities or the injection of invalid characters that could disrupt Cloudinary's file path interpretation.
+    - If the `batchNumber` (after sanitization) is empty, it falls back to the string `"report"`.
+    - The final `publicId` is then constructed by concatenating the sanitized `batchNumber` with the existing `timestamp` (which is `Math.round(new Date().getTime() / 1000).toString()`) using an underscore: `` `${batchNumber}_${timestamp}` ``.
 
 2.  **Cloudinary Signature Update:**
-    *   Cloudinary's server-side signing mechanism requires all parameters to be included in the signature string and sorted alphabetically. We updated the `paramsToSign` string to include the new `public_id`.
-    *   The updated `paramsToSign` string is now: `` `folder=${folder}&public_id=${publicId}&signature_algorithm=sha256&timestamp=${timestamp}${apiSecret}` ``. Note the alphabetical order: `folder`, `public_id`, `signature_algorithm`, `timestamp`.
-    *   The `signature` is then computed using `crypto.createHash("sha256").update(paramsToSign).digest("hex")`.
+    - Cloudinary's server-side signing mechanism requires all parameters to be included in the signature string and sorted alphabetically. We updated the `paramsToSign` string to include the new `public_id`.
+    - The updated `paramsToSign` string is now: `` `folder=${folder}&public_id=${publicId}&signature_algorithm=sha256&timestamp=${timestamp}${apiSecret}` ``. Note the alphabetical order: `folder`, `public_id`, `signature_algorithm`, `timestamp`.
+    - The `signature` is then computed using `crypto.createHash("sha256").update(paramsToSign).digest("hex")`.
 
 3.  **`FormData` for Cloudinary:**
-    *   Finally, the generated `publicId` is appended to the `cloudinaryFormData` object that is sent to Cloudinary's upload API: `cloudinaryFormData.append("public_id", publicId)`. This ensures Cloudinary uses our specified `public_id` instead of generating its own.
+    - Finally, the generated `publicId` is appended to the `cloudinaryFormData` object that is sent to Cloudinary's upload API: `cloudinaryFormData.append("public_id", publicId)`. This ensures Cloudinary uses our specified `public_id` instead of generating its own.
 
 A new test file, `apps/web/tests/upload-route.test.ts`, was introduced to provide robust testing for this functionality. This test suite:
-*   Mocks `global.fetch` to intercept and inspect the `FormData` payload sent to Cloudinary.
-*   Verifies that the `folder` parameter is correctly set to `"sahidawa/reports"`.
-*   Confirms that the `public_id` is generated in the expected `${batch_number}_${timestamp}` format when a `batch_number` is provided.
-*   Tests the fallback mechanism, ensuring the `public_id` becomes `report_${timestamp}` when no `batch_number` is supplied.
-*   Validates that the Cloudinary `signature` is correctly computed over the alphabetically sorted parameters, including the new `public_id`, using a mock `API_SECRET`.
+
+- Mocks `global.fetch` to intercept and inspect the `FormData` payload sent to Cloudinary.
+- Verifies that the `folder` parameter is correctly set to `"sahidawa/reports"`.
+- Confirms that the `public_id` is generated in the expected `${batch_number}_${timestamp}` format when a `batch_number` is provided.
+- Tests the fallback mechanism, ensuring the `public_id` becomes `report_${timestamp}` when no `batch_number` is supplied.
+- Validates that the Cloudinary `signature` is correctly computed over the alphabetically sorted parameters, including the new `public_id`, using a mock `API_SECRET`.
 
 ## Technical Decisions
 
@@ -91,42 +92,44 @@ To re-implement or extend this feature, a contributor would follow these steps:
     cloudinaryFormData.append("public_id", publicId); // The new addition
     ```
 9.  **Add Comprehensive Tests:** Create or update a test file (e.g., `apps/web/tests/upload-route.test.ts`) to verify the new behavior.
-    *   Mock `global.fetch` to capture the `FormData` sent to Cloudinary.
-    *   Assert that the `folder` and `public_id` are correctly set.
-    *   Test fallback logic for missing identifiers.
-    *   Crucially, verify that the `signature` is correctly computed, including the new `public_id` parameter in the alphabetically sorted string.
+    - Mock `global.fetch` to capture the `FormData` sent to Cloudinary.
+    - Assert that the `folder` and `public_id` are correctly set.
+    - Test fallback logic for missing identifiers.
+    - Crucially, verify that the `signature` is correctly computed, including the new `public_id` parameter in the alphabetically sorted string.
 
 **Gotchas:**
-*   **Alphabetical Sorting:** Misordering parameters in `paramsToSign` is the most common cause of Cloudinary signature validation failures. Double-check the alphabetical order.
-*   **Timestamp Consistency:** Ensure the `timestamp` used in `paramsToSign` is identical to the `timestamp` appended to `cloudinaryFormData`.
-*   **Sanitization:** Never trust client-provided `public_id` components without server-side sanitization.
+
+- **Alphabetical Sorting:** Misordering parameters in `paramsToSign` is the most common cause of Cloudinary signature validation failures. Double-check the alphabetical order.
+- **Timestamp Consistency:** Ensure the `timestamp` used in `paramsToSign` is identical to the `timestamp` appended to `cloudinaryFormData`.
+- **Sanitization:** Never trust client-provided `public_id` components without server-side sanitization.
 
 ## Impact on System Architecture
 
 This change significantly enhances the traceability and manageability of uploaded report images within our Cloudinary storage. By establishing a clear, predictable naming convention (`sahidawa/reports/{batch_number}_{timestamp}`), we lay a foundational layer for several future capabilities:
 
-*   **Improved Data Linking:** The deterministic `public_id` allows for direct, reliable linking of images to specific database records (e.g., a `MedicineIncidentReport` entry) using the `batch_number` and `timestamp` as keys, simplifying data retrieval and display.
-*   **Enhanced Search and Organization:** Future features can leverage the predictable `public_id` for more efficient searching, filtering, and organization of report media within Cloudinary, potentially through Cloudinary's own API or custom indexing.
-*   **Decoupled Development:** While the report wizard UI currently doesn't collect a `batch_number`, the `/api/upload` route is now fully capable of handling it. This decouples frontend UI development from backend API readiness, allowing the UI feature to be implemented later without requiring further backend changes to the core upload logic.
-*   **Security and Consistency:** Reinforcing server-side control over `public_id` generation and sanitization maintains a high level of security and ensures consistent naming conventions across all report uploads, regardless of the client application.
+- **Improved Data Linking:** The deterministic `public_id` allows for direct, reliable linking of images to specific database records (e.g., a `MedicineIncidentReport` entry) using the `batch_number` and `timestamp` as keys, simplifying data retrieval and display.
+- **Enhanced Search and Organization:** Future features can leverage the predictable `public_id` for more efficient searching, filtering, and organization of report media within Cloudinary, potentially through Cloudinary's own API or custom indexing.
+- **Decoupled Development:** While the report wizard UI currently doesn't collect a `batch_number`, the `/api/upload` route is now fully capable of handling it. This decouples frontend UI development from backend API readiness, allowing the UI feature to be implemented later without requiring further backend changes to the core upload logic.
+- **Security and Consistency:** Reinforcing server-side control over `public_id` generation and sanitization maintains a high level of security and ensures consistent naming conventions across all report uploads, regardless of the client application.
 
 ## Testing & Verification
 
 This change was thoroughly tested and verified through a combination of automated tests and static analysis:
 
-*   **Unit/Integration Tests:** A new, dedicated test suite was created at `apps/web/tests/upload-route.test.ts`. This suite specifically targets the `POST` handler of `apps/web/app/api/upload/route.ts`.
-    *   It utilizes `jest.fn()` to mock `global.fetch`, allowing us to intercept and inspect the `FormData` payload that our system sends to the actual Cloudinary API.
-    *   Tests confirm that the `folder` parameter in the Cloudinary request is correctly set to `"sahidawa/reports"`.
-    *   It verifies that the `public_id` is generated in the expected `BATCH123_{timestamp}` format when a `batch_number` is provided in the request.
-    *   The fallback mechanism is tested, ensuring that when no `batch_number` is supplied, the `public_id` correctly defaults to `report_{timestamp}`.
-    *   Crucially, the tests assert that the Cloudinary `signature` is correctly computed over the alphabetically sorted parameters, including the newly added `public_id`, using a mock `API_SECRET`. This ensures the integrity and authenticity of our Cloudinary upload requests.
-    *   The test suite passes with `npx jest`.
+- **Unit/Integration Tests:** A new, dedicated test suite was created at `apps/web/tests/upload-route.test.ts`. This suite specifically targets the `POST` handler of `apps/web/app/api/upload/route.ts`.
+    - It utilizes `jest.fn()` to mock `global.fetch`, allowing us to intercept and inspect the `FormData` payload that our system sends to the actual Cloudinary API.
+    - Tests confirm that the `folder` parameter in the Cloudinary request is correctly set to `"sahidawa/reports"`.
+    - It verifies that the `public_id` is generated in the expected `BATCH123_{timestamp}` format when a `batch_number` is provided in the request.
+    - The fallback mechanism is tested, ensuring that when no `batch_number` is supplied, the `public_id` correctly defaults to `report_{timestamp}`.
+    - Crucially, the tests assert that the Cloudinary `signature` is correctly computed over the alphabetically sorted parameters, including the newly added `public_id`, using a mock `API_SECRET`. This ensures the integrity and authenticity of our Cloudinary upload requests.
+    - The test suite passes with `npx jest`.
 
-*   **Static Analysis:**
-    *   `npx tsc --noEmit` was executed to ensure that no TypeScript compilation errors were introduced by the changes. The codebase remained clean.
-    *   `npx prettier --check` was run on both modified files to confirm adherence to our established code formatting standards. The files passed without issues.
+- **Static Analysis:**
+    - `npx tsc --noEmit` was executed to ensure that no TypeScript compilation errors were introduced by the changes. The codebase remained clean.
+    - `npx prettier --check` was run on both modified files to confirm adherence to our established code formatting standards. The files passed without issues.
 
 **Edge Cases Considered:**
-*   **Missing `batch_number`:** Handled by the explicit fallback to `"report"` as the prefix for the `public_id`.
-*   **Invalid Characters in `batch_number`:** Addressed by the robust sanitization regex `[^A-Za-z0-9._-]`, which strips any characters that could potentially lead to path injection or invalid Cloudinary identifiers.
-*   **Signature Mismatch:** The dedicated tests explicitly verify the signature computation, ensuring that the alphabetical sorting of parameters and the inclusion of `public_id` are correct, preventing signature validation failures by Cloudinary.
+
+- **Missing `batch_number`:** Handled by the explicit fallback to `"report"` as the prefix for the `public_id`.
+- **Invalid Characters in `batch_number`:** Addressed by the robust sanitization regex `[^A-Za-z0-9._-]`, which strips any characters that could potentially lead to path injection or invalid Cloudinary identifiers.
+- **Signature Mismatch:** The dedicated tests explicitly verify the signature computation, ensuring that the alphabetical sorting of parameters and the inclusion of `public_id` are correct, preventing signature validation failures by Cloudinary.

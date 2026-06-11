@@ -20,6 +20,7 @@ Prior to this change, users viewing the pharmacy map panel lacked a quick, at-a-
 The core implementation resides within the `PharmacyPanels` functional component in `apps/web/app/[locale]/map/PharmacyPanels.tsx`. This component receives a `pharmacies` prop, which is an array of pharmacy objects representing the currently loaded and visible pharmacies.
 
 Our system now calculates three distinct counts based on this `pharmacies` array:
+
 1.  **`verifiedCount`**: This is determined by filtering the `pharmacies` array to include only those objects where the `isVerified` property is truthy, and then taking the `length` of the resulting filtered array.
     ```typescript
     const verifiedCount = pharmacies.filter((pharmacy) => pharmacy.isVerified).length;
@@ -43,7 +44,7 @@ Existing map behavior and risk-layer controls are explicitly left unchanged, ens
 
 ## Technical Decisions
 
-Our decision to derive the counts directly from the `pharmacies` prop within `PharmacyPanels.tsx` was made to ensure that the displayed summary is always synchronized with the *currently visible and loaded* pharmacy data. This approach avoids potential discrepancies that could arise if counts were fetched separately or from a global store that might not reflect the specific subset of pharmacies the user is interacting with on the map.
+Our decision to derive the counts directly from the `pharmacies` prop within `PharmacyPanels.tsx` was made to ensure that the displayed summary is always synchronized with the _currently visible and loaded_ pharmacy data. This approach avoids potential discrepancies that could arise if counts were fetched separately or from a global store that might not reflect the specific subset of pharmacies the user is interacting with on the map.
 
 We chose simple `filter().length` operations for calculating the counts because they are highly readable, idiomatic JavaScript, and efficient enough for the typical number of pharmacies expected to be loaded in the frontend. For larger datasets, more optimized counting mechanisms might be considered, but for the current scale, this approach offers the best balance of simplicity and performance.
 
@@ -58,15 +59,15 @@ To re-implement this feature or add similar summary statistics to a panel:
 1.  **Identify the Target Component:** Locate the `PharmacyPanels` component in `apps/web/app/[locale]/map/PharmacyPanels.tsx`. This component is responsible for rendering the left-hand panel on the pharmacy map page.
 2.  **Access Data Prop:** Ensure the component receives the relevant data as a prop. In this case, the `pharmacies: Pharmacy[]` prop is crucial, as it contains the list of all currently loaded pharmacies.
 3.  **Calculate Summary Statistics:** Within the component's render function, before the main UI structure, define constants for each count you wish to display.
-    *   For "Verified stores":
+    - For "Verified stores":
         ```typescript
         const verifiedCount = pharmacies.filter((pharmacy) => pharmacy.isVerified).length;
         ```
-    *   For "Jan Aushadhi" (Government stores):
+    - For "Jan Aushadhi" (Government stores):
         ```typescript
         const govtCount = pharmacies.filter((pharmacy) => pharmacy.type === "govt").length;
         ```
-    *   For "Live options" (Total visible):
+    - For "Live options" (Total visible):
         ```typescript
         const liveCount = pharmacies.length;
         ```
@@ -86,25 +87,23 @@ To re-implement this feature or add similar summary statistics to a panel:
     ```
 6.  **Create Grid Layout:** Inside the new section `div`, add another `div` to establish the grid for the cards:
     ```jsx
-    <div className="grid grid-cols-3 gap-2">
-        {/* Map over summaryItems here */}
-    </div>
+    <div className="grid grid-cols-3 gap-2">{/* Map over summaryItems here */}</div>
     ```
 7.  **Render Individual Cards:** Map over the `summaryItems` array to render an `article` element for each. Apply SahiDawa's standard card and text styling:
     ```jsx
-    {summaryItems.map((item) => (
-        <article
-            key={item.label} // Ensure unique key for list items
-            className="rounded-2xl border border-(--color-border-muted) bg-(--color-surface-muted) p-3"
-        >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-(--color-text-muted)">
-                {item.label}
-            </p>
-            <p className="mt-1 text-xl font-black text-(--color-text-primary)">
-                {item.value}
-            </p>
-        </article>
-    ))}
+    {
+        summaryItems.map((item) => (
+            <article
+                key={item.label} // Ensure unique key for list items
+                className="rounded-2xl border border-(--color-border-muted) bg-(--color-surface-muted) p-3"
+            >
+                <p className="text-[10px] font-semibold tracking-[0.18em] text-(--color-text-muted) uppercase">
+                    {item.label}
+                </p>
+                <p className="mt-1 text-xl font-black text-(--color-text-primary)">{item.value}</p>
+            </article>
+        ));
+    }
     ```
 8.  **Add Unit Test:** Create or update a test file (e.g., `apps/web/tests/pharmacy-panels.test.tsx`) to assert that the new summary labels are present in the rendered output when the `PharmacyPanels` component is mounted.
     ```typescript
@@ -117,10 +116,11 @@ To re-implement this feature or add similar summary statistics to a panel:
 This change primarily impacts the frontend user experience of the `apps/web` application. It introduces a new UI element that enhances the information density and usability of the pharmacy map panel without altering any backend logic, API contracts, or data storage mechanisms.
 
 The architectural impact is minimal:
-*   **Improved UX:** Users gain immediate insight into aggregated pharmacy data, which can aid in decision-making and navigation.
-*   **No Backend Changes:** The feature relies entirely on existing data structures passed to the frontend, meaning no modifications were required for `apps/api` or `data/`.
-*   **Frontend-Driven Logic:** The counting logic is purely client-side, operating on the `pharmacies` array already available in the component's props. This keeps the component self-contained and efficient for its specific task.
-*   **Reinforces Component-Based Design:** It demonstrates how new features can be cleanly integrated into existing React components by leveraging props and local state derivation.
+
+- **Improved UX:** Users gain immediate insight into aggregated pharmacy data, which can aid in decision-making and navigation.
+- **No Backend Changes:** The feature relies entirely on existing data structures passed to the frontend, meaning no modifications were required for `apps/api` or `data/`.
+- **Frontend-Driven Logic:** The counting logic is purely client-side, operating on the `pharmacies` array already available in the component's props. This keeps the component self-contained and efficient for its specific task.
+- **Reinforces Component-Based Design:** It demonstrates how new features can be cleanly integrated into existing React components by leveraging props and local state derivation.
 
 This enhancement lays the groundwork for potentially adding more dynamic, client-side derived statistics to other panels or dashboards in the future, following the pattern of processing already-loaded data for immediate user feedback.
 
@@ -136,5 +136,5 @@ This change was thoroughly tested to ensure its correct functionality and integr
 2.  **Local Development Verification:** The contributor performed local testing by running the project and visually confirming that the summary cards appeared correctly in the pharmacy map panel, and that the counts accurately reflected the loaded pharmacy list.
 3.  **Automated Test Suite:** The full web test suite was executed, with all 20 test suites and 119 tests passing, indicating no regressions were introduced by this change.
 4.  **Edge Cases:**
-    *   **Empty Pharmacy List:** If the `pharmacies` array is empty (e.g., no pharmacies found in the area or no filters match), all three counts (`verifiedCount`, `govtCount`, `liveCount`) will correctly display `0`. This ensures the UI remains stable and informative even in edge cases where no data is available.
-    *   **Missing `isVerified` or `type` properties:** Not documented in this PR, but our system implicitly assumes that `pharmacy` objects passed to the component will consistently have `isVerified` (boolean) and `type` (string, e.g., "govt") properties. If these were missing or malformed, the `filter` operations would still execute, but might yield unexpected counts (e.g., `undefined` values would not match `"govt"`). This is handled by our data validation layers upstream.
+    - **Empty Pharmacy List:** If the `pharmacies` array is empty (e.g., no pharmacies found in the area or no filters match), all three counts (`verifiedCount`, `govtCount`, `liveCount`) will correctly display `0`. This ensures the UI remains stable and informative even in edge cases where no data is available.
+    - **Missing `isVerified` or `type` properties:** Not documented in this PR, but our system implicitly assumes that `pharmacy` objects passed to the component will consistently have `isVerified` (boolean) and `type` (string, e.g., "govt") properties. If these were missing or malformed, the `filter` operations would still execute, but might yield unexpected counts (e.g., `undefined` values would not match `"govt"`). This is handled by our data validation layers upstream.

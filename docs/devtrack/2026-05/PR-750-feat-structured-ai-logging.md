@@ -21,25 +21,26 @@ Prior to this PR, our AI-related API routes (`/api/chat` and `/api/voice/transcr
 The core of this change is the creation of `apps/web/lib/structuredLogger.ts`. This new module exports two key components:
 
 1.  **`LogEntry` Interface:** This TypeScript interface defines the structure for all structured log entries. It includes:
-    *   `timestamp: string`: An ISO 8601 formatted timestamp (automatically injected by the `structuredLog` function).
-    *   `log_level: "error" | "warn" | "info"`: The severity level of the log.
-    *   `route: string`: The API route where the log originated (e.g., `/api/chat`).
-    *   `latency_ms?: number`: Optional, the duration of the operation in milliseconds, calculated from `startTime`.
-    *   `metrics?: { input_tokens?: number; output_tokens?: number; }`: Optional, for capturing performance metrics specific to AI operations, such as token usage.
-    *   `error?: { message: string; code?: number; stack?: string }`: Optional, for detailed error information, including a human-readable message, an HTTP status code, and the error stack trace.
-    *   `meta?: Record<string, any>`: Optional, for any additional context-specific metadata relevant to the log entry.
+    - `timestamp: string`: An ISO 8601 formatted timestamp (automatically injected by the `structuredLog` function).
+    - `log_level: "error" | "warn" | "info"`: The severity level of the log.
+    - `route: string`: The API route where the log originated (e.g., `/api/chat`).
+    - `latency_ms?: number`: Optional, the duration of the operation in milliseconds, calculated from `startTime`.
+    - `metrics?: { input_tokens?: number; output_tokens?: number; }`: Optional, for capturing performance metrics specific to AI operations, such as token usage.
+    - `error?: { message: string; code?: number; stack?: string }`: Optional, for detailed error information, including a human-readable message, an HTTP status code, and the error stack trace.
+    - `meta?: Record<string, any>`: Optional, for any additional context-specific metadata relevant to the log entry.
 
 2.  **`structuredLog(entry: Omit<LogEntry, 'timestamp'>)` Function:** This function serves as the central logging utility. It accepts an `entry` object that conforms to the `LogEntry` interface but omits the `timestamp` field. Internally, it automatically adds `timestamp: new Date().toISOString()` to ensure all logs have a consistent, server-generated UTC timestamp. It then uses a `switch` statement on `entry.log_level` to direct the output to the appropriate `console` method (`console.error` for "error", `console.warn` for "warn", or `console.info` for "info"). The entire `LogEntry` object, now including the timestamp, is then `JSON.stringify()`'d and logged, ensuring a machine-readable, structured output.
 
 The existing API routes, `apps/web/app/api/chat/route.ts` and `apps/web/app/api/voice/transcribe/route.ts`, were updated to leverage this new utility:
-*   Both files now import `structuredLog` from `@/lib/structuredLogger`.
-*   The previously duplicated `LogEntry` interface and `structuredLog` function definitions were removed from these route files.
-*   All existing and new log calls were refactored to use the imported `structuredLog` function. This involved removing manual `timestamp` injections, as the utility now handles this automatically.
-*   Each route now defines a `ROUTE` constant (e.g., `const ROUTE = "/api/chat";`) at the top of its `POST` handler to ensure consistent `route` field population in logs.
-*   `startTime = Date.now()` is now captured at the very beginning of each `POST` handler, and `latency_ms = Date.now() - startTime` is calculated before each `structuredLog` call for both successful responses and error handling. This provides crucial performance insights for every request.
-*   Error handling in both routes was enhanced to provide more specific `error.message` values based on HTTP status codes (e.g., 503 for service unavailable, 429 for rate limits) and to include `error.stack` where applicable, improving diagnostic capabilities.
-*   Specific `meta` fields were added to log calls to provide context relevant to each route, such as `mode`, `responseLanguage`, `messageCount` for `/api/chat`, and `language`, `fileSizeBytes`, `fileType`, `transcriptLength` for `/api/voice/transcribe`.
-*   A minor syntax error in `apps/web/app/api/voice/transcribe/route.ts` within the `!upstreamResponse.ok` error block was also fixed as part of this refactor, improving the robustness of error reporting for transcription failures.
+
+- Both files now import `structuredLog` from `@/lib/structuredLogger`.
+- The previously duplicated `LogEntry` interface and `structuredLog` function definitions were removed from these route files.
+- All existing and new log calls were refactored to use the imported `structuredLog` function. This involved removing manual `timestamp` injections, as the utility now handles this automatically.
+- Each route now defines a `ROUTE` constant (e.g., `const ROUTE = "/api/chat";`) at the top of its `POST` handler to ensure consistent `route` field population in logs.
+- `startTime = Date.now()` is now captured at the very beginning of each `POST` handler, and `latency_ms = Date.now() - startTime` is calculated before each `structuredLog` call for both successful responses and error handling. This provides crucial performance insights for every request.
+- Error handling in both routes was enhanced to provide more specific `error.message` values based on HTTP status codes (e.g., 503 for service unavailable, 429 for rate limits) and to include `error.stack` where applicable, improving diagnostic capabilities.
+- Specific `meta` fields were added to log calls to provide context relevant to each route, such as `mode`, `responseLanguage`, `messageCount` for `/api/chat`, and `language`, `fileSizeBytes`, `fileType`, `transcriptLength` for `/api/voice/transcribe`.
+- A minor syntax error in `apps/web/app/api/voice/transcribe/route.ts` within the `!upstreamResponse.ok` error block was also fixed as part of this refactor, improving the robustness of error reporting for transcription failures.
 
 ## Technical Decisions
 
@@ -79,7 +80,7 @@ To implement a similar structured logging pattern for a new or existing API rout
         meta?: Record<string, any>;
     }
 
-    export function structuredLog(entry: Omit<LogEntry, 'timestamp'>) {
+    export function structuredLog(entry: Omit<LogEntry, "timestamp">) {
         const fullEntry: LogEntry = {
             ...entry,
             timestamp: new Date().toISOString(),
@@ -103,15 +104,16 @@ To implement a similar structured logging pattern for a new or existing API rout
     ```
 
 2.  **Integrate into your API Route file (e.g., `apps/web/app/api/your-new-feature/route.ts`):**
+    - **Import the logger:**
+      At the top of your route file, add the import statement:
 
-    *   **Import the logger:**
-        At the top of your route file, add the import statement:
         ```typescript
         import { structuredLog } from "@/lib/structuredLogger";
         ```
 
-    *   **Define the route constant:**
-        Inside your `POST` (or `GET`, `PUT`, etc.) handler function, define a constant for the current route path. This ensures consistency in your logs.
+    - **Define the route constant:**
+      Inside your `POST` (or `GET`, `PUT`, etc.) handler function, define a constant for the current route path. This ensures consistency in your logs.
+
         ```typescript
         export async function POST(req: Request) {
             const ROUTE = "/api/your-new-feature";
@@ -119,8 +121,9 @@ To implement a similar structured logging pattern for a new or existing API rout
         }
         ```
 
-    *   **Capture request start time:**
-        Immediately after defining the `ROUTE` constant, capture the start time to calculate latency:
+    - **Capture request start time:**
+      Immediately after defining the `ROUTE` constant, capture the start time to calculate latency:
+
         ```typescript
         export async function POST(req: Request) {
             const ROUTE = "/api/your-new-feature";
@@ -129,8 +132,9 @@ To implement a similar structured logging pattern for a new or existing API rout
         }
         ```
 
-    *   **Log successful operations:**
-        When an operation completes successfully, calculate the `latency_ms` and call `structuredLog` with `log_level: "info"`. Include relevant `metrics` (e.g., AI token counts) and `meta` data specific to the operation.
+    - **Log successful operations:**
+      When an operation completes successfully, calculate the `latency_ms` and call `structuredLog` with `log_level: "info"`. Include relevant `metrics` (e.g., AI token counts) and `meta` data specific to the operation.
+
         ```typescript
         // Example: successful response
         const latency_ms = Date.now() - startTime;
@@ -146,8 +150,9 @@ To implement a similar structured logging pattern for a new or existing API rout
         return NextResponse.json({ success: true });
         ```
 
-    *   **Log warnings:**
-        For non-critical issues or expected conditions that don't halt the request but are noteworthy, use `log_level: "warn"`.
+    - **Log warnings:**
+      For non-critical issues or expected conditions that don't halt the request but are noteworthy, use `log_level: "warn"`.
+
         ```typescript
         // Example: missing optional parameter
         if (!optionalParam) {
@@ -159,8 +164,9 @@ To implement a similar structured logging pattern for a new or existing API rout
         }
         ```
 
-    *   **Log errors:**
-        In `catch` blocks or when handling failed upstream responses, calculate `latency_ms`, determine an appropriate `statusCode`, and call `structuredLog` with `log_level: "error"`. Provide a detailed `error` object including `message`, `code` (typically the HTTP status code), and `stack` if available.
+    - **Log errors:**
+      In `catch` blocks or when handling failed upstream responses, calculate `latency_ms`, determine an appropriate `statusCode`, and call `structuredLog` with `log_level: "error"`. Provide a detailed `error` object including `message`, `code` (typically the HTTP status code), and `stack` if available.
+
         ```typescript
         // Example: error handling in a try-catch block
         try {
@@ -183,10 +189,10 @@ To implement a similar structured logging pattern for a new or existing API rout
         }
         ```
 
-    *   **Gotchas:**
-        *   Always ensure `startTime` is captured at the very beginning of the request handler to get accurate `latency_ms` for the entire request lifecycle.
-        *   Remember to remove any manual `timestamp: new Date().toISOString()` fields from your log calls, as the `structuredLog` utility handles this automatically.
-        *   Be mindful of sensitive data when adding information to the `meta` fields in logs. Avoid logging personally identifiable information (PII) or confidential system details directly.
+    - **Gotchas:**
+        - Always ensure `startTime` is captured at the very beginning of the request handler to get accurate `latency_ms` for the entire request lifecycle.
+        - Remember to remove any manual `timestamp: new Date().toISOString()` fields from your log calls, as the `structuredLog` utility handles this automatically.
+        - Be mindful of sensitive data when adding information to the `meta` fields in logs. Avoid logging personally identifiable information (PII) or confidential system details directly.
 
 ## Impact on System Architecture
 
@@ -204,25 +210,26 @@ Not documented in this PR. However, based on the nature of the changes, verifica
 
 1.  **Local Development Environment Testing:** Running the Next.js application locally and making various requests to the `/api/chat` and `/api/voice/transcribe` endpoints.
 2.  **Console Output Inspection:** Meticulously inspecting the server console output to verify that:
-    *   Structured JSON logs are consistently produced for all scenarios.
-    *   `log_level` correctly reflects the severity (e.g., `info` for success, `warn` for non-critical issues, `error` for failures).
-    *   The `timestamp` field is automatically present and correctly formatted as an ISO 8601 string in every log entry.
-    *   `latency_ms`, `route`, `metrics`, `error` (including `message`, `code`, `stack`), and `meta` fields contain the expected and accurate values for each specific log event.
+    - Structured JSON logs are consistently produced for all scenarios.
+    - `log_level` correctly reflects the severity (e.g., `info` for success, `warn` for non-critical issues, `error` for failures).
+    - The `timestamp` field is automatically present and correctly formatted as an ISO 8601 string in every log entry.
+    - `latency_ms`, `route`, `metrics`, `error` (including `message`, `code`, `stack`), and `meta` fields contain the expected and accurate values for each specific log event.
 3.  **Scenario-Based Testing:**
-    *   **Success Paths:** Verify logs for successful AI chat responses and voice transcription.
-    *   **Warning Paths:** Verify logs for conditions like empty message text in chat requests or missing audio files in transcription requests.
-    *   **Error Paths:** Intentionally trigger various error conditions, such as:
-        *   Simulating upstream AI service unavailability (e.g., by temporarily blocking access to the AI provider).
-        *   Simulating upstream AI rate limits.
-        *   Simulating invalid responses or timeouts from the ML transcription service.
-        *   Testing general unexpected errors within the API route logic.
-    *   For each error, ensure the `error` object in the log contains a descriptive `message`, an appropriate `code` (HTTP status), and a `stack` trace if available.
+    - **Success Paths:** Verify logs for successful AI chat responses and voice transcription.
+    - **Warning Paths:** Verify logs for conditions like empty message text in chat requests or missing audio files in transcription requests.
+    - **Error Paths:** Intentionally trigger various error conditions, such as:
+        - Simulating upstream AI service unavailability (e.g., by temporarily blocking access to the AI provider).
+        - Simulating upstream AI rate limits.
+        - Simulating invalid responses or timeouts from the ML transcription service.
+        - Testing general unexpected errors within the API route logic.
+    - For each error, ensure the `error` object in the log contains a descriptive `message`, an appropriate `code` (HTTP status), and a `stack` trace if available.
 
 Edge cases that exist and were specifically addressed by the enhanced logging in this PR include:
-*   Empty message text provided to `/api/chat`.
-*   Missing audio file in the request to `/api/voice/transcribe`.
-*   Upstream Google AI service unavailability (HTTP 503) or rate limits (HTTP 429).
-*   Invalid or malformed responses from the ML transcription service (HTTP 502).
-*   Non-OK status codes from the ML transcription service, with detailed error messages.
-*   Timeouts when communicating with the ML transcription service (HTTP 504).
-*   General network or application-level errors preventing communication with external services (HTTP 503).
+
+- Empty message text provided to `/api/chat`.
+- Missing audio file in the request to `/api/voice/transcribe`.
+- Upstream Google AI service unavailability (HTTP 503) or rate limits (HTTP 429).
+- Invalid or malformed responses from the ML transcription service (HTTP 502).
+- Non-OK status codes from the ML transcription service, with detailed error messages.
+- Timeouts when communicating with the ML transcription service (HTTP 504).
+- General network or application-level errors preventing communication with external services (HTTP 503).

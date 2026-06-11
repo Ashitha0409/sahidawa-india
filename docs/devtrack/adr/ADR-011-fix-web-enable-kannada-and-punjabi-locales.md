@@ -9,6 +9,7 @@ The SahiDawa web application had existing translation message files for Kannada 
 ## Decision
 
 The web application was updated to fully enable Kannada (`kn`) and Punjabi (`pa`) locales. This involved:
+
 - Modifying the `next-intl` routing configuration to include `kn` and `pa` in the list of supported locales.
 - Updating the `LanguageSwitcher` component to display Kannada (`ಕನ್ನಡ`) and Punjabi (`ਪੰਜਾਬੀ`) as selectable options.
 - Adjusting the application's proxy matcher to correctly handle direct URL access for `/kn` and `/pa` routes.
@@ -17,21 +18,23 @@ The web application was updated to fully enable Kannada (`kn`) and Punjabi (`pa`
 
 ## Alternatives Considered
 
-| Alternative | Why Rejected |
-|---|---|
-| **Implement partial support (e.g., UI only, no chat API)** | Rejected as it would lead to an inconsistent user experience where the UI is translated but core functionalities like the AI chat are not, diminishing the value of multi-language support. |
-| **Delay implementation until all message files are fully complete and reviewed** | Rejected to prioritize immediate user access to available translations. The current approach allows for incremental improvement of translation quality while providing basic functionality. |
-| **Use client-side only language detection/switching without URL routing** | Rejected as it would not leverage `next-intl`'s server-side rendering (SSR) capabilities for locale-specific content, potentially impacting SEO and initial page load performance for translated content. |
+| Alternative                                                                      | Why Rejected                                                                                                                                                                                              |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Implement partial support (e.g., UI only, no chat API)**                       | Rejected as it would lead to an inconsistent user experience where the UI is translated but core functionalities like the AI chat are not, diminishing the value of multi-language support.               |
+| **Delay implementation until all message files are fully complete and reviewed** | Rejected to prioritize immediate user access to available translations. The current approach allows for incremental improvement of translation quality while providing basic functionality.               |
+| **Use client-side only language detection/switching without URL routing**        | Rejected as it would not leverage `next-intl`'s server-side rendering (SSR) capabilities for locale-specific content, potentially impacting SEO and initial page load performance for translated content. |
 
 ## Consequences
 
 **Positive:**
+
 - Expanded accessibility for Kannada and Punjabi speaking users, improving user experience and platform reach.
 - Enhanced consistency across the application by integrating existing translation assets into the UI, routing, and chat API.
 - Improved test coverage with new regression tests for i18n routing and locale handling.
 - Aligns with SahiDawa's mission to serve diverse linguistic communities in India.
 
 **Trade-offs:**
+
 - Increased complexity in i18n configuration and routing logic due to additional locales.
 - Ongoing maintenance for new locales, including ensuring translation quality and completeness for all features.
 

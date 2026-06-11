@@ -25,30 +25,30 @@ Prior to this PR, the SahiDawa map page (`/[locale]/map`) suffered from signific
 The core of this change involved a significant refactor of the map page's layout and component structure, focusing on responsiveness and preventing UI collisions.
 
 1.  **`PharmacyPanels.tsx` Component Introduction:**
-    *   We created a new React component at `apps/web/app/[locale]/map/PharmacyPanels.tsx`. This component now encapsulates all UI related to displaying pharmacy search results and the associated risk layers controls.
-    *   It is designed to be highly responsive:
-        *   On mobile screens (below `md` breakpoint), it's intended to be rendered within a bottom sheet or drawer.
-        *   On tablet and desktop screens (`md+` breakpoint), it renders as a fixed-width left sidebar.
-    *   The previously floating risk-layers card has been removed from `apps/web/app/[locale]/map/page.tsx` and its functionality is now integrated directly within `PharmacyPanels.tsx`. This ensures that risk layer controls are contextually grouped with pharmacy information and do not float independently, reducing visual clutter.
+    - We created a new React component at `apps/web/app/[locale]/map/PharmacyPanels.tsx`. This component now encapsulates all UI related to displaying pharmacy search results and the associated risk layers controls.
+    - It is designed to be highly responsive:
+        - On mobile screens (below `md` breakpoint), it's intended to be rendered within a bottom sheet or drawer.
+        - On tablet and desktop screens (`md+` breakpoint), it renders as a fixed-width left sidebar.
+    - The previously floating risk-layers card has been removed from `apps/web/app/[locale]/map/page.tsx` and its functionality is now integrated directly within `PharmacyPanels.tsx`. This ensures that risk layer controls are contextually grouped with pharmacy information and do not float independently, reducing visual clutter.
 
 2.  **`apps/web/app/[locale]/map/page.tsx` Refactor:**
-    *   The main map page now imports and utilizes the new `PharmacyPanels` component.
-    *   It implements conditional rendering logic to display `PharmacyPanels` appropriately:
-        *   For mobile, it likely wraps `PharmacyPanels` within a `BottomSheet` or similar mobile-first drawer component (though the specific drawer component implementation is not detailed in this PR's diff, its usage is implied by the description).
-        *   For `md+` screens, `PharmacyPanels` is rendered as a persistent left sidebar.
-    *   The layout of the map itself has been adjusted using Tailwind CSS to account for the new sidebar, ensuring the map content is not obscured and maintains its full functionality.
-    *   Explicit `aria-label` attributes were added to icon-only map controls to improve accessibility for screen reader users.
+    - The main map page now imports and utilizes the new `PharmacyPanels` component.
+    - It implements conditional rendering logic to display `PharmacyPanels` appropriately:
+        - For mobile, it likely wraps `PharmacyPanels` within a `BottomSheet` or similar mobile-first drawer component (though the specific drawer component implementation is not detailed in this PR's diff, its usage is implied by the description).
+        - For `md+` screens, `PharmacyPanels` is rendered as a persistent left sidebar.
+    - The layout of the map itself has been adjusted using Tailwind CSS to account for the new sidebar, ensuring the map content is not obscured and maintains its full functionality.
+    - Explicit `aria-label` attributes were added to icon-only map controls to improve accessibility for screen reader users.
 
 3.  **Route-Aware Chatbot Positioning:**
-    *   **`chatbotPosition.ts` Utility:** A new utility file, `apps/web/app/[locale]/components/chatbotPosition.ts`, was introduced. This file centralizes the logic for determining the chatbot's CSS positioning classes based on the current route.
-        *   It exports `getChatbotPositionClasses({ pathname: string, isOpen: boolean })` which returns a string of Tailwind CSS classes for the chatbot's main container `div`.
-        *   It exports `getChatbotPanelClasses({ pathname: string })` which returns a string of Tailwind CSS classes for the chatbot's actual chat panel `div`.
-    *   **`Chatbot.tsx` Integration:**
-        *   The `Chatbot` component (`apps/web/app/[locale]/components/Chatbot.tsx`) now imports `usePathname` from `next/navigation` to get the current URL path.
-        *   It also imports `getChatbotPanelClasses` and `getChatbotPositionClasses` from the new `chatbotPosition.ts` file.
-        *   The main `div` containing the chatbot button and panel now dynamically applies its positioning classes using `getChatbotPositionClasses({ pathname, isOpen })`.
-        *   The chat panel `div` (the actual chat window) now dynamically applies its classes using `getChatbotPanelClasses({ pathname })`.
-        *   When the `pathname` indicates the user is on the map page (e.g., `pathname.startsWith('/en/map')`), and the chatbot is open, `getChatbotPositionClasses` will return classes that shift the chatbot's `right` position to avoid overlapping with the new left sidebar (e.g., `md:right-[calc(350px+1.5rem)]` if the sidebar is 350px wide). On other pages, or when closed, it reverts to its default `right-6` position.
+    - **`chatbotPosition.ts` Utility:** A new utility file, `apps/web/app/[locale]/components/chatbotPosition.ts`, was introduced. This file centralizes the logic for determining the chatbot's CSS positioning classes based on the current route.
+        - It exports `getChatbotPositionClasses({ pathname: string, isOpen: boolean })` which returns a string of Tailwind CSS classes for the chatbot's main container `div`.
+        - It exports `getChatbotPanelClasses({ pathname: string })` which returns a string of Tailwind CSS classes for the chatbot's actual chat panel `div`.
+    - **`Chatbot.tsx` Integration:**
+        - The `Chatbot` component (`apps/web/app/[locale]/components/Chatbot.tsx`) now imports `usePathname` from `next/navigation` to get the current URL path.
+        - It also imports `getChatbotPanelClasses` and `getChatbotPositionClasses` from the new `chatbotPosition.ts` file.
+        - The main `div` containing the chatbot button and panel now dynamically applies its positioning classes using `getChatbotPositionClasses({ pathname, isOpen })`.
+        - The chat panel `div` (the actual chat window) now dynamically applies its classes using `getChatbotPanelClasses({ pathname })`.
+        - When the `pathname` indicates the user is on the map page (e.g., `pathname.startsWith('/en/map')`), and the chatbot is open, `getChatbotPositionClasses` will return classes that shift the chatbot's `right` position to avoid overlapping with the new left sidebar (e.g., `md:right-[calc(350px+1.5rem)]` if the sidebar is 350px wide). On other pages, or when closed, it reverts to its default `right-6` position.
 
 4.  **Existing Logic Preservation:** The underlying data fetching, filtering, selection, and hotspot logic for pharmacies remains unchanged, ensuring that the core functionality of the map is preserved while improving its presentation.
 
@@ -65,39 +65,39 @@ The core of this change involved a significant refactor of the map page's layout
 To re-implement this feature, a contributor would follow these steps:
 
 1.  **Create `PharmacyPanels.tsx`:**
-    *   In `apps/web/app/[locale]/map/`, create `PharmacyPanels.tsx`.
-    *   Define a React functional component `PharmacyPanels` that accepts props such as `pharmacies: Pharmacy[]`, `isLoading: boolean`, `onSelectPharmacy: (id: string) => void`, and potentially props for risk layer controls (e.g., `riskLayers: RiskLayer[]`, `onToggleRiskLayer: (id: string) => void`).
-    *   Implement the UI for displaying a list of pharmacies, including their details and selection states.
-    *   Integrate the UI for risk layer controls (e.g., checkboxes, sliders) directly within this component.
-    *   Use responsive Tailwind CSS classes to define its layout:
-        *   For mobile (default, e.g., `max-md:`): Design the panel to fit within a bottom sheet or drawer, potentially with a fixed height and scrollable content.
-        *   For `md+` screens: Apply classes for a fixed-width left sidebar (e.g., `md:fixed md:left-0 md:top-0 md:h-full md:w-[350px] md:bg-white md:shadow-lg md:overflow-y-auto`).
+    - In `apps/web/app/[locale]/map/`, create `PharmacyPanels.tsx`.
+    - Define a React functional component `PharmacyPanels` that accepts props such as `pharmacies: Pharmacy[]`, `isLoading: boolean`, `onSelectPharmacy: (id: string) => void`, and potentially props for risk layer controls (e.g., `riskLayers: RiskLayer[]`, `onToggleRiskLayer: (id: string) => void`).
+    - Implement the UI for displaying a list of pharmacies, including their details and selection states.
+    - Integrate the UI for risk layer controls (e.g., checkboxes, sliders) directly within this component.
+    - Use responsive Tailwind CSS classes to define its layout:
+        - For mobile (default, e.g., `max-md:`): Design the panel to fit within a bottom sheet or drawer, potentially with a fixed height and scrollable content.
+        - For `md+` screens: Apply classes for a fixed-width left sidebar (e.g., `md:fixed md:left-0 md:top-0 md:h-full md:w-[350px] md:bg-white md:shadow-lg md:overflow-y-auto`).
 
 2.  **Update `apps/web/app/[locale]/map/page.tsx`:**
-    *   Import the `PharmacyPanels` component.
-    *   Identify the main map container element. Adjust its styling to accommodate the new left sidebar on `md+` screens (e.g., `md:ml-[350px]` or `md:pl-[350px]`) to prevent overlap.
-    *   Implement conditional rendering for `PharmacyPanels`:
-        *   For mobile, use a state variable to control the visibility of a `BottomSheet` or `Drawer` component that wraps `PharmacyPanels`. Add a button on the map to toggle this drawer.
-        *   For `md+` screens, render `PharmacyPanels` directly as a static element on the left side of the layout.
-    *   Remove any legacy floating components for pharmacy results or risk layers.
-    *   Add `aria-label` attributes to any icon-only interactive elements on the map (e.g., zoom controls, location buttons) for improved accessibility.
+    - Import the `PharmacyPanels` component.
+    - Identify the main map container element. Adjust its styling to accommodate the new left sidebar on `md+` screens (e.g., `md:ml-[350px]` or `md:pl-[350px]`) to prevent overlap.
+    - Implement conditional rendering for `PharmacyPanels`:
+        - For mobile, use a state variable to control the visibility of a `BottomSheet` or `Drawer` component that wraps `PharmacyPanels`. Add a button on the map to toggle this drawer.
+        - For `md+` screens, render `PharmacyPanels` directly as a static element on the left side of the layout.
+    - Remove any legacy floating components for pharmacy results or risk layers.
+    - Add `aria-label` attributes to any icon-only interactive elements on the map (e.g., zoom controls, location buttons) for improved accessibility.
 
 3.  **Create `chatbotPosition.ts`:**
-    *   In `apps/web/app/[locale]/components/`, create `chatbotPosition.ts`.
-    *   Define and export `getChatbotPositionClasses` and `getChatbotPanelClasses` functions.
-    *   `getChatbotPositionClasses({ pathname: string, isOpen: boolean }): string`:
-        *   Return `fixed bottom-20 md:bottom-6 right-6 z-50 font-sans` as the default.
-        *   If `pathname` matches the map route (e.g., `/en/map` or `/[locale]/map`) AND `isOpen` is `true`, override the `right` position for `md+` screens to `md:right-[calc(350px+1.5rem)]` (assuming a 350px wide sidebar and 1.5rem spacing).
-    *   `getChatbotPanelClasses({ pathname: string }): string`:
-        *   Return `absolute bottom-16 right-0 w-[350px] h-[450px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 text-gray-800 transition-all duration-300` as the default.
-        *   No specific overrides for the map route are strictly necessary for the panel itself, as its container's position handles the main offset.
+    - In `apps/web/app/[locale]/components/`, create `chatbotPosition.ts`.
+    - Define and export `getChatbotPositionClasses` and `getChatbotPanelClasses` functions.
+    - `getChatbotPositionClasses({ pathname: string, isOpen: boolean }): string`:
+        - Return `fixed bottom-20 md:bottom-6 right-6 z-50 font-sans` as the default.
+        - If `pathname` matches the map route (e.g., `/en/map` or `/[locale]/map`) AND `isOpen` is `true`, override the `right` position for `md+` screens to `md:right-[calc(350px+1.5rem)]` (assuming a 350px wide sidebar and 1.5rem spacing).
+    - `getChatbotPanelClasses({ pathname: string }): string`:
+        - Return `absolute bottom-16 right-0 w-[350px] h-[450px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 text-gray-800 transition-all duration-300` as the default.
+        - No specific overrides for the map route are strictly necessary for the panel itself, as its container's position handles the main offset.
 
 4.  **Update `apps/web/app/[locale]/components/Chatbot.tsx`:**
-    *   Import `usePathname` from `next/navigation`.
-    *   Import `getChatbotPositionClasses` and `getChatbotPanelClasses` from `./chatbotPosition`.
-    *   Inside the `Chatbot` component, get the current pathname using `const pathname = usePathname();`.
-    *   Replace the hardcoded `className` on the outermost `div` with `{getChatbotPositionClasses({ pathname, isOpen })}`.
-    *   Replace the hardcoded `className` on the chatbot panel `div` (the one with `absolute bottom-16 right-0...`) with `{getChatbotPanelClasses({ pathname })}`.
+    - Import `usePathname` from `next/navigation`.
+    - Import `getChatbotPositionClasses` and `getChatbotPanelClasses` from `./chatbotPosition`.
+    - Inside the `Chatbot` component, get the current pathname using `const pathname = usePathname();`.
+    - Replace the hardcoded `className` on the outermost `div` with `{getChatbotPositionClasses({ pathname, isOpen })}`.
+    - Replace the hardcoded `className` on the chatbot panel `div` (the one with `absolute bottom-16 right-0...`) with `{getChatbotPanelClasses({ pathname })}`.
 
 ## Impact on System Architecture
 
@@ -114,18 +114,19 @@ This change significantly improves the frontend architecture of the SahiDawa web
 This change was thoroughly tested with a combination of unit tests and local verification steps.
 
 1.  **Unit Tests:**
-    *   **`apps/web/tests/chatbot-position.test.ts`:** New Jest tests were added to specifically cover the logic within `apps/web/app/[locale]/components/chatbotPosition.ts`. These tests verify that the `getChatbotPositionClasses` and `getChatbotPanelClasses` functions return the correct Tailwind CSS class strings under various conditions, including different `pathname` values (especially the map route) and `isOpen` states for the chatbot.
-    *   **`apps/web/tests/pharmacy-panels.test.tsx`:** Focused Jest tests were added for the new `PharmacyPanels` component. These tests ensure that the component renders correctly, displays pharmacy data as expected, handles loading states, and properly integrates the risk layers control UI.
-    *   **`apps/web/tests/pharmacy-map-layout.test.tsx`:** Integration-level Jest tests were added to verify the overall responsive layout of the map page. These tests confirm that `PharmacyPanels` renders as a bottom sheet on mobile breakpoints and as a left sidebar on `md+` breakpoints, and that the map pane adjusts its layout accordingly without visual overlaps.
+    - **`apps/web/tests/chatbot-position.test.ts`:** New Jest tests were added to specifically cover the logic within `apps/web/app/[locale]/components/chatbotPosition.ts`. These tests verify that the `getChatbotPositionClasses` and `getChatbotPanelClasses` functions return the correct Tailwind CSS class strings under various conditions, including different `pathname` values (especially the map route) and `isOpen` states for the chatbot.
+    - **`apps/web/tests/pharmacy-panels.test.tsx`:** Focused Jest tests were added for the new `PharmacyPanels` component. These tests ensure that the component renders correctly, displays pharmacy data as expected, handles loading states, and properly integrates the risk layers control UI.
+    - **`apps/web/tests/pharmacy-map-layout.test.tsx`:** Integration-level Jest tests were added to verify the overall responsive layout of the map page. These tests confirm that `PharmacyPanels` renders as a bottom sheet on mobile breakpoints and as a left sidebar on `md+` breakpoints, and that the map pane adjusts its layout accordingly without visual overlaps.
 
 2.  **Local Verification:**
-    *   `npm run dev -w web`: The application was run in development mode to visually inspect the changes. The map page was navigated to, and the behavior of the pharmacy panels (bottom sheet on mobile, sidebar on desktop) and the chatbot's repositioning on the map route were manually verified.
-    *   `npm test -w web -- --runInBand`: All frontend tests, including the newly added ones, were executed to ensure no regressions were introduced and that the new logic is correctly covered.
-    *   `cd apps/web && npx tsc --noEmit`: TypeScript compilation was run to ensure type safety and catch any potential type errors.
-    *   `npm run build -w web`: A production build of the web application was performed to verify that the changes build successfully without errors.
+    - `npm run dev -w web`: The application was run in development mode to visually inspect the changes. The map page was navigated to, and the behavior of the pharmacy panels (bottom sheet on mobile, sidebar on desktop) and the chatbot's repositioning on the map route were manually verified.
+    - `npm test -w web -- --runInBand`: All frontend tests, including the newly added ones, were executed to ensure no regressions were introduced and that the new logic is correctly covered.
+    - `cd apps/web && npx tsc --noEmit`: TypeScript compilation was run to ensure type safety and catch any potential type errors.
+    - `npm run build -w web`: A production build of the web application was performed to verify that the changes build successfully without errors.
 
 **Edge Cases:**
-*   **Chatbot on non-map pages:** The `chatbotPosition.ts` logic ensures the chatbot maintains its default positioning on pages other than the map, preventing unintended shifts.
-*   **Responsive breakpoints:** The use of Tailwind CSS breakpoints (`md+`) ensures the layout transitions smoothly between mobile and desktop views.
-*   **Loading states:** The `PharmacyPanels` component is designed to handle loading states gracefully, preventing UI flicker or empty displays while data is being fetched.
-*   **Accessibility:** The added `aria-label`s address a common accessibility edge case for icon-only controls.
+
+- **Chatbot on non-map pages:** The `chatbotPosition.ts` logic ensures the chatbot maintains its default positioning on pages other than the map, preventing unintended shifts.
+- **Responsive breakpoints:** The use of Tailwind CSS breakpoints (`md+`) ensures the layout transitions smoothly between mobile and desktop views.
+- **Loading states:** The `PharmacyPanels` component is designed to handle loading states gracefully, preventing UI flicker or empty displays while data is being fetched.
+- **Accessibility:** The added `aria-label`s address a common accessibility edge case for icon-only controls.

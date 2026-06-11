@@ -12,19 +12,21 @@ The `apps/web` frontend was updated to implement responsive design principles fo
 
 ## Alternatives Considered
 
-| Alternative | Why Rejected |
-|---|---|
-| Implement a separate, dedicated mobile-only chat interface. | This approach would introduce significant development and maintenance overhead by requiring two distinct UI implementations for the same feature. It would also increase the bundle size and complexity of state management across different views, rather than leveraging responsive CSS for a unified codebase. |
+| Alternative                                                                                                         | Why Rejected                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Implement a separate, dedicated mobile-only chat interface.                                                         | This approach would introduce significant development and maintenance overhead by requiring two distinct UI implementations for the same feature. It would also increase the bundle size and complexity of state management across different views, rather than leveraging responsive CSS for a unified codebase.                                 |
 | Defer dark mode implementation for the AI Chat, or rely on a future global theme system to automatically handle it. | Deferring would result in an immediate inconsistent user experience, especially if other parts of the platform already support dark mode or if users expect system-wide theme adherence. Relying on a future global system without explicit integration now risks the chat component being overlooked or requiring a more complex retrofit later. |
 
 ## Consequences
 
 **Positive:**
+
 - Significantly improved user experience and accessibility of the AI Chat on mobile devices.
 - Achieved visual consistency and integration of the AI Chat with potential global dark mode themes.
 - Eliminated critical UI/UX bugs related to layout and overflow on smaller screens.
 
 **Trade-offs:**
+
 - Increased complexity in the `Chatbot.tsx` component's styling due to the addition of responsive and dark mode-specific Tailwind CSS classes.
 - Requires careful consideration during future UI updates to ensure continued responsiveness and dark mode compatibility.
 

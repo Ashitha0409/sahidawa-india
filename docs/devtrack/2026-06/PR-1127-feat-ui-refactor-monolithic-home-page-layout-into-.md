@@ -56,10 +56,11 @@ The updates to UI test assertions for `bottom-[7.5rem]` and `bottom-[5rem]` indi
 To re-implement the core aspects of this change, a contributor would follow these steps:
 
 1.  **Homepage Decomposition:**
-    *   Identify distinct, self-contained sections of the main landing page (e.g., header, mobile navigation, quick actions, live alerts).
-    *   For each section, create a new client component file (e.g., `components/layout/Header.tsx`, `components/layout/MobileNav.tsx`, `components/sections/QuickActions.tsx`, `components/sections/LiveAlerts.tsx`). Ensure these components are marked with `"use client";` if they require client-side interactivity.
-    *   Move the relevant JSX and logic from the main `apps/web/app/[locale]/page.tsx` into these new component files.
-    *   In `apps/web/app/[locale]/page.tsx`, replace the extracted markup with imports and renders of the new components, aiming for a concise "4-line import module layout pattern" like:
+    - Identify distinct, self-contained sections of the main landing page (e.g., header, mobile navigation, quick actions, live alerts).
+    - For each section, create a new client component file (e.g., `components/layout/Header.tsx`, `components/layout/MobileNav.tsx`, `components/sections/QuickActions.tsx`, `components/sections/LiveAlerts.tsx`). Ensure these components are marked with `"use client";` if they require client-side interactivity.
+    - Move the relevant JSX and logic from the main `apps/web/app/[locale]/page.tsx` into these new component files.
+    - In `apps/web/app/[locale]/page.tsx`, replace the extracted markup with imports and renders of the new components, aiming for a concise "4-line import module layout pattern" like:
+
         ```typescript jsx
         import { Header } from "@/components/layout/Header";
         import { MobileNav } from "@/components/layout/MobileNav";
@@ -81,27 +82,27 @@ To re-implement the core aspects of this change, a contributor would follow thes
         ```
 
 2.  **UX & Glassmorphism:**
-    *   For elements requiring a glassmorphic effect (e.g., navigation bars), apply Tailwind CSS classes such as `bg-opacity-40 backdrop-blur-md` to the container `div` or `nav` element. Adjust `bg-opacity` and `backdrop-blur` values as needed for desired visual fidelity.
+    - For elements requiring a glassmorphic effect (e.g., navigation bars), apply Tailwind CSS classes such as `bg-opacity-40 backdrop-blur-md` to the container `div` or `nav` element. Adjust `bg-opacity` and `backdrop-blur` values as needed for desired visual fidelity.
 
 3.  **Colorblind-Friendly Accessibility:**
-    *   When displaying status indicators (e.g., for CDSCO alerts), ensure that in addition to color-based styling (e.g., `border-red-500`), explicit textual labels like `[🔴 CRITICAL]` or `[🟠 WARNING]` are included within the component's JSX. This provides a non-color-dependent means of conveying information.
+    - When displaying status indicators (e.g., for CDSCO alerts), ensure that in addition to color-based styling (e.g., `border-red-500`), explicit textual labels like `[🔴 CRITICAL]` or `[🟠 WARNING]` are included within the component's JSX. This provides a non-color-dependent means of conveying information.
 
 4.  **PWA Fixed Tab Infrastructure:**
-    *   Design a dedicated mobile navigation component (e.g., `MobileNav.tsx`).
-    *   Position it fixed at the bottom of the viewport using Tailwind classes like `fixed bottom-0 left-0 right-0 z-50`.
-    *   Ensure touch targets within this navigation are sufficiently large (e.g., `min-h-[48px] min-w-[48px]`) to meet accessibility guidelines for small screens.
+    - Design a dedicated mobile navigation component (e.g., `MobileNav.tsx`).
+    - Position it fixed at the bottom of the viewport using Tailwind classes like `fixed bottom-0 left-0 right-0 z-50`.
+    - Ensure touch targets within this navigation are sufficiently large (e.g., `min-h-[48px] min-w-[48px]`) to meet accessibility guidelines for small screens.
 
 5.  **Shimmer Skeleton Loader:**
-    *   Create a new component file, `apps/web/components/scanner/SkeletonLoader.tsx`.
-    *   Define the component's structure using `div` elements to mimic the layout of the content it will eventually replace (e.g., header, image, text lines, action buttons).
-    *   Apply Tailwind CSS classes for visual effects:
-        *   `animate-pulse` for general fading/pulsing effects.
-        *   `bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]` for the sliding shimmer effect. Define the `shimmer` keyframe in `globals.css` or a Tailwind config extension if not already present.
-        *   `animate-fadeIn` for the initial appearance of the loader.
-    *   In `apps/web/app/[locale]/scan/page.tsx`, replace the old `LoadingSkeleton` with the new `SkeletonLoader` and ensure it's conditionally rendered based on the `isScanning` state.
+    - Create a new component file, `apps/web/components/scanner/SkeletonLoader.tsx`.
+    - Define the component's structure using `div` elements to mimic the layout of the content it will eventually replace (e.g., header, image, text lines, action buttons).
+    - Apply Tailwind CSS classes for visual effects:
+        - `animate-pulse` for general fading/pulsing effects.
+        - `bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 bg-[length:200%_100%] animate-[shimmer_1.5s_infinite]` for the sliding shimmer effect. Define the `shimmer` keyframe in `globals.css` or a Tailwind config extension if not already present.
+        - `animate-fadeIn` for the initial appearance of the loader.
+    - In `apps/web/app/[locale]/scan/page.tsx`, replace the old `LoadingSkeleton` with the new `SkeletonLoader` and ensure it's conditionally rendered based on the `isScanning` state.
 
 6.  **API Test Fix (CSRF Mocking):**
-    *   For any API test file that interacts with endpoints protected by `csrf-csrf` and requires bypassing validation, add the following Jest mock at the top of the test file (e.g., `apps/api/tests/alertsPagination.test.ts`):
+    - For any API test file that interacts with endpoints protected by `csrf-csrf` and requires bypassing validation, add the following Jest mock at the top of the test file (e.g., `apps/api/tests/alertsPagination.test.ts`):
         ```typescript
         jest.mock("csrf-csrf", () => ({
             doubleCsrf: () => ({
@@ -112,7 +113,7 @@ To re-implement the core aspects of this change, a contributor would follow thes
         ```
 
 7.  **UI Test Updates:**
-    *   When modifying UI element positions or styles, always update corresponding Jest/React Testing Library assertions in files like `apps/web/tests/back-to-top-button.test.tsx` and `apps/web/tests/chatbot-position.test.ts`. Ensure that `expect(markup).toContain(...)` or `expect(element).toHaveClass(...)` calls reflect the new Tailwind utility classes (e.g., `bottom-[7.5rem]`, `bottom-[5rem]`).
+    - When modifying UI element positions or styles, always update corresponding Jest/React Testing Library assertions in files like `apps/web/tests/back-to-top-button.test.tsx` and `apps/web/tests/chatbot-position.test.ts`. Ensure that `expect(markup).toContain(...)` or `expect(element).toHaveClass(...)` calls reflect the new Tailwind utility classes (e.g., `bottom-[7.5rem]`, `bottom-[5rem]`).
 
 ## Impact on System Architecture
 
@@ -132,13 +133,13 @@ Verification for this change involved several layers:
 
 1.  **API Test Suite:** The `apps/api/tests/alertsPagination.test.ts` file was specifically targeted. The `jest.mock("csrf-csrf", ...)` implementation was verified to successfully bypass CSRF validation, allowing the pagination logic tests to pass without error, as indicated by the successful API log output showing `SahiDawa API is running` and `GET / 200`.
 2.  **Frontend Unit Tests:**
-    *   `apps/web/tests/back-to-top-button.test.tsx` was updated and verified to assert the new `bottom-[7.5rem]` positioning, ensuring the button's layout conforms to the new design.
-    *   `apps/web/tests/chatbot-position.test.ts` was updated and verified to assert the new `bottom-[5rem]` positioning, confirming the chatbot's revised layout.
+    - `apps/web/tests/back-to-top-button.test.tsx` was updated and verified to assert the new `bottom-[7.5rem]` positioning, ensuring the button's layout conforms to the new design.
+    - `apps/web/tests/chatbot-position.test.ts` was updated and verified to assert the new `bottom-[5rem]` positioning, confirming the chatbot's revised layout.
 3.  **Manual UI/UX Verification (Not documented in this PR):** While not explicitly detailed in the provided logs, the nature of the UI/UX changes (component refactoring, glassmorphism, accessibility features, mobile navigation, skeleton loader) necessitates extensive manual verification across various devices and screen sizes. This would include:
-    *   Visual inspection of the refactored homepage to ensure all components (`Header`, `MobileNav`, `QuickActions`, `LiveAlerts`) render correctly and integrate seamlessly.
-    *   Testing the glassmorphic effects on navigation elements for visual fidelity.
-    *   Verification of the `[🔴 CRITICAL]` and `[🟠 WARNING]` text triggers on CDSCO alerts, including testing with colorblind simulation tools.
-    *   Interaction testing of the persistent mobile-bottom navigation shelf on small viewports, ensuring touch targets are responsive and navigation is fluid.
-    *   Observing the `SkeletonLoader` during the medicine scanning process (`apps/web/app/[locale]/scan/page.tsx`) to confirm its shimmer animation and correct conditional rendering.
+    - Visual inspection of the refactored homepage to ensure all components (`Header`, `MobileNav`, `QuickActions`, `LiveAlerts`) render correctly and integrate seamlessly.
+    - Testing the glassmorphic effects on navigation elements for visual fidelity.
+    - Verification of the `[🔴 CRITICAL]` and `[🟠 WARNING]` text triggers on CDSCO alerts, including testing with colorblind simulation tools.
+    - Interaction testing of the persistent mobile-bottom navigation shelf on small viewports, ensuring touch targets are responsive and navigation is fluid.
+    - Observing the `SkeletonLoader` during the medicine scanning process (`apps/web/app/[locale]/scan/page.tsx`) to confirm its shimmer animation and correct conditional rendering.
 
 Edge cases for the `SkeletonLoader` would include scenarios where `isScanning` state might toggle rapidly or if the scanner encounters an immediate error, ensuring the loader appears and disappears gracefully. For accessibility, edge cases might involve extremely low-contrast themes or unusual screen readers, which would require further dedicated testing beyond the scope of this PR's explicit documentation.

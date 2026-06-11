@@ -22,32 +22,32 @@ Before this PR, our ML service, particularly the ASR transcription endpoint, lac
 We implemented a new service module, `apps/ml/services/telemetry.py`, to encapsulate all telemetry-related logic.
 
 1.  **`apps/ml/services/telemetry.py`**:
-    *   **`TELEMETRY_LOGGER_NAME`**: A constant `sahidawa.ml.telemetry` is defined for consistent logger identification.
-    *   **`configure_telemetry_logging(level: int = logging.INFO)`**: This function is responsible for setting up the root logger's basic configuration with a standardized format (`%(asctime)s %(levelname)s [%(name)s] %(message)s`). Crucially, it also ensures `tracemalloc.start()` is called if tracing is not already active, providing a fallback mechanism for memory tracking.
-    *   **`get_telemetry_logger()`**: A simple getter to retrieve the logger instance named `TELEMETRY_LOGGER_NAME`.
-    *   **`start_timer()`**: Returns `time.perf_counter()`, providing a high-resolution timestamp for measuring elapsed time.
-    *   **`get_memory_usage_mb()`**: This is a robust, multi-platform function designed to retrieve the current process's Resident Set Size (RSS) memory usage in megabytes. It attempts to use `psutil` first for its comprehensive capabilities. If `psutil` is unavailable, it falls back to Windows-specific `ctypes` calls (`GetProcessMemoryInfo`) for `WorkingSetSize`. If neither `psutil` nor `ctypes` (on Windows) succeed, it tries `resource.getrusage(resource.RUSAGE_SELF).ru_maxrss` (common on POSIX systems). As a final fallback, it uses Python's built-in `tracemalloc.get_traced_memory()` to report peak memory usage. This layered approach ensures memory metrics are captured across various deployment environments.
-    *   **`get_audio_duration_seconds(audio_data: Any, sample_rate: int | float)`**: Calculates the duration of an audio clip in seconds given its raw `audio_data` (e.g., a NumPy array) and `sample_rate`. It handles both array-like objects with a `shape` attribute and simple sequences.
-    *   **`log_transcription_finished(...)`**: This is the core logging function. It takes a `started_at` timestamp, `audio_duration_seconds`, `memory_before_mb`, and an optional `logger`. It calculates the `elapsed_seconds` and `memory_delta_mb` (current memory minus `memory_before_mb`) and logs a formatted message including these metrics.
+    - **`TELEMETRY_LOGGER_NAME`**: A constant `sahidawa.ml.telemetry` is defined for consistent logger identification.
+    - **`configure_telemetry_logging(level: int = logging.INFO)`**: This function is responsible for setting up the root logger's basic configuration with a standardized format (`%(asctime)s %(levelname)s [%(name)s] %(message)s`). Crucially, it also ensures `tracemalloc.start()` is called if tracing is not already active, providing a fallback mechanism for memory tracking.
+    - **`get_telemetry_logger()`**: A simple getter to retrieve the logger instance named `TELEMETRY_LOGGER_NAME`.
+    - **`start_timer()`**: Returns `time.perf_counter()`, providing a high-resolution timestamp for measuring elapsed time.
+    - **`get_memory_usage_mb()`**: This is a robust, multi-platform function designed to retrieve the current process's Resident Set Size (RSS) memory usage in megabytes. It attempts to use `psutil` first for its comprehensive capabilities. If `psutil` is unavailable, it falls back to Windows-specific `ctypes` calls (`GetProcessMemoryInfo`) for `WorkingSetSize`. If neither `psutil` nor `ctypes` (on Windows) succeed, it tries `resource.getrusage(resource.RUSAGE_SELF).ru_maxrss` (common on POSIX systems). As a final fallback, it uses Python's built-in `tracemalloc.get_traced_memory()` to report peak memory usage. This layered approach ensures memory metrics are captured across various deployment environments.
+    - **`get_audio_duration_seconds(audio_data: Any, sample_rate: int | float)`**: Calculates the duration of an audio clip in seconds given its raw `audio_data` (e.g., a NumPy array) and `sample_rate`. It handles both array-like objects with a `shape` attribute and simple sequences.
+    - **`log_transcription_finished(...)`**: This is the core logging function. It takes a `started_at` timestamp, `audio_duration_seconds`, `memory_before_mb`, and an optional `logger`. It calculates the `elapsed_seconds` and `memory_delta_mb` (current memory minus `memory_before_mb`) and logs a formatted message including these metrics.
 
 2.  **`apps/ml/main.py`**:
-    *   We imported `configure_telemetry_logging` from `services.telemetry`.
-    *   `configure_telemetry_logging()` is now called immediately after `load_dotenv()` at the application's startup. This centralizes the basic logging configuration for the entire ML service.
+    - We imported `configure_telemetry_logging` from `services.telemetry`.
+    - `configure_telemetry_logging()` is now called immediately after `load_dotenv()` at the application's startup. This centralizes the basic logging configuration for the entire ML service.
 
 3.  **`apps/ml/routers/asr.py`**:
-    *   We removed the generic `logging.basicConfig(level=logging.INFO)` call, as the global logging configuration is now handled by `configure_telemetry_logging` in `main.py`.
-    *   We imported `get_audio_duration_seconds`, `get_memory_usage_mb`, `get_telemetry_logger`, `log_transcription_finished`, and `start_timer` from `services.telemetry`.
-    *   A `telemetry_logger` instance is initialized using `get_telemetry_logger()`.
-    *   Within the `transcribe_audio` asynchronous endpoint:
-        *   `audio_duration_seconds` is calculated using `get_audio_duration_seconds` after the normalized WAV file is read by `soundfile`.
-        *   `transcription_started_at` is captured using `start_timer()` just before `model.transcribe()` is called.
-        *   `memory_before_mb` is captured using `get_memory_usage_mb()` just before `model.transcribe()` is called.
-        *   After the transcription completes and the `transcript` is assembled, `log_transcription_finished` is called with the collected metrics (`started_at`, `audio_duration_seconds`, `memory_before_mb`, and `telemetry_logger`).
+    - We removed the generic `logging.basicConfig(level=logging.INFO)` call, as the global logging configuration is now handled by `configure_telemetry_logging` in `main.py`.
+    - We imported `get_audio_duration_seconds`, `get_memory_usage_mb`, `get_telemetry_logger`, `log_transcription_finished`, and `start_timer` from `services.telemetry`.
+    - A `telemetry_logger` instance is initialized using `get_telemetry_logger()`.
+    - Within the `transcribe_audio` asynchronous endpoint:
+        - `audio_duration_seconds` is calculated using `get_audio_duration_seconds` after the normalized WAV file is read by `soundfile`.
+        - `transcription_started_at` is captured using `start_timer()` just before `model.transcribe()` is called.
+        - `memory_before_mb` is captured using `get_memory_usage_mb()` just before `model.transcribe()` is called.
+        - After the transcription completes and the `transcript` is assembled, `log_transcription_finished` is called with the collected metrics (`started_at`, `audio_duration_seconds`, `memory_before_mb`, and `telemetry_logger`).
 
 4.  **`apps/ml/tests/test_telemetry.py`**:
-    *   A new test file was added to verify the core telemetry functions.
-    *   `test_get_audio_duration_seconds()`: Asserts the correct calculation of audio duration for a given `numpy` array and sample rate.
-    *   `test_log_transcription_finished_outputs_latency_message(caplog)`: Uses `pytest`'s `caplog` fixture to verify that `log_transcription_finished` produces the expected log message containing "transcription finished in", "audio clip", and "memory" details.
+    - A new test file was added to verify the core telemetry functions.
+    - `test_get_audio_duration_seconds()`: Asserts the correct calculation of audio duration for a given `numpy` array and sample rate.
+    - `test_log_transcription_finished_outputs_latency_message(caplog)`: Uses `pytest`'s `caplog` fixture to verify that `log_transcription_finished` produces the expected log message containing "transcription finished in", "audio clip", and "memory" details.
 
 ## Technical Decisions
 
@@ -63,36 +63,36 @@ We implemented a new service module, `apps/ml/services/telemetry.py`, to encapsu
 To re-implement this telemetry feature from scratch, a contributor would follow these steps:
 
 1.  **Create the Telemetry Service Module**:
-    *   Create `apps/ml/services/telemetry.py`.
-    *   Define a constant `TELEMETRY_LOGGER_NAME = "sahidawa.ml.telemetry"`.
-    *   Implement `configure_telemetry_logging(level: int = logging.INFO)`: This function should call `logging.basicConfig` with a desired format (e.g., `"%(asctime)s %(levelname)s [%(name)s] %(message)s"`) and ensure `tracemalloc.start()` is called for memory tracing.
-    *   Implement `get_telemetry_logger()`: A simple wrapper around `logging.getLogger(TELEMETRY_LOGGER_NAME)`.
-    *   Implement `start_timer()`: Return `time.perf_counter()`.
-    *   Implement `get_memory_usage_mb()`: This is the most complex part. Start with `psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)`. Include `try...except` blocks. If `psutil` fails, add platform-specific alternatives (e.g., `ctypes` for Windows, `resource.getrusage` for POSIX). Finally, include `tracemalloc.get_traced_memory()` as a last resort, ensuring `tracemalloc.start()` is called if not already active.
-    *   Implement `get_audio_duration_seconds(audio_data: Any, sample_rate: int | float)`: Calculate `sample_count / sample_rate`, handling `audio_data` as a NumPy array (using `shape[0]`) or a generic sequence (using `len`).
-    *   Implement `log_transcription_finished(...)`: This function should accept `started_at`, `audio_duration_seconds`, `memory_before_mb`, and an optional `logger`. Calculate `elapsed_seconds` and `memory_delta_mb`, then use the provided or default telemetry logger to log a formatted string (e.g., `f"transcription finished in %.2f seconds for %.2f seconds of audio clip | memory %.2f MB (delta %.2f MB)"`).
+    - Create `apps/ml/services/telemetry.py`.
+    - Define a constant `TELEMETRY_LOGGER_NAME = "sahidawa.ml.telemetry"`.
+    - Implement `configure_telemetry_logging(level: int = logging.INFO)`: This function should call `logging.basicConfig` with a desired format (e.g., `"%(asctime)s %(levelname)s [%(name)s] %(message)s"`) and ensure `tracemalloc.start()` is called for memory tracing.
+    - Implement `get_telemetry_logger()`: A simple wrapper around `logging.getLogger(TELEMETRY_LOGGER_NAME)`.
+    - Implement `start_timer()`: Return `time.perf_counter()`.
+    - Implement `get_memory_usage_mb()`: This is the most complex part. Start with `psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)`. Include `try...except` blocks. If `psutil` fails, add platform-specific alternatives (e.g., `ctypes` for Windows, `resource.getrusage` for POSIX). Finally, include `tracemalloc.get_traced_memory()` as a last resort, ensuring `tracemalloc.start()` is called if not already active.
+    - Implement `get_audio_duration_seconds(audio_data: Any, sample_rate: int | float)`: Calculate `sample_count / sample_rate`, handling `audio_data` as a NumPy array (using `shape[0]`) or a generic sequence (using `len`).
+    - Implement `log_transcription_finished(...)`: This function should accept `started_at`, `audio_duration_seconds`, `memory_before_mb`, and an optional `logger`. Calculate `elapsed_seconds` and `memory_delta_mb`, then use the provided or default telemetry logger to log a formatted string (e.g., `f"transcription finished in %.2f seconds for %.2f seconds of audio clip | memory %.2f MB (delta %.2f MB)"`).
 
 2.  **Integrate Telemetry Configuration into Application Startup**:
-    *   In `apps/ml/main.py`, import `configure_telemetry_logging`.
-    *   Call `configure_telemetry_logging()` early in the application's lifecycle, typically after environment variables are loaded.
+    - In `apps/ml/main.py`, import `configure_telemetry_logging`.
+    - Call `configure_telemetry_logging()` early in the application's lifecycle, typically after environment variables are loaded.
 
 3.  **Integrate Telemetry into the ASR Router**:
-    *   In `apps/ml/routers/asr.py`, remove any existing `logging.basicConfig` calls.
-    *   Import all necessary functions from `services.telemetry`: `get_audio_duration_seconds`, `get_memory_usage_mb`, `get_telemetry_logger`, `log_transcription_finished`, `start_timer`.
-    *   Initialize `telemetry_logger = get_telemetry_logger()` at the module level.
-    *   Within the `transcribe_audio` endpoint:
-        *   Declare variables like `transcription_started_at`, `audio_duration_seconds`, `memory_before_mb` initialized to `None` or `0.0`.
-        *   After reading the audio data (e.g., with `sf.read`), calculate `audio_duration_seconds = get_audio_duration_seconds(audio_data, sample_rate)`.
-        *   Immediately before calling `model.transcribe()`:
-            *   Set `transcription_started_at = start_timer()`.
-            *   Set `memory_before_mb = get_memory_usage_mb()`.
-        *   Immediately after `model.transcribe()` completes and the `transcript` is formed:
-            *   Call `log_transcription_finished(started_at=transcription_started_at, audio_duration_seconds=audio_duration_seconds, memory_before_mb=memory_before_mb, logger=telemetry_logger)`.
+    - In `apps/ml/routers/asr.py`, remove any existing `logging.basicConfig` calls.
+    - Import all necessary functions from `services.telemetry`: `get_audio_duration_seconds`, `get_memory_usage_mb`, `get_telemetry_logger`, `log_transcription_finished`, `start_timer`.
+    - Initialize `telemetry_logger = get_telemetry_logger()` at the module level.
+    - Within the `transcribe_audio` endpoint:
+        - Declare variables like `transcription_started_at`, `audio_duration_seconds`, `memory_before_mb` initialized to `None` or `0.0`.
+        - After reading the audio data (e.g., with `sf.read`), calculate `audio_duration_seconds = get_audio_duration_seconds(audio_data, sample_rate)`.
+        - Immediately before calling `model.transcribe()`:
+            - Set `transcription_started_at = start_timer()`.
+            - Set `memory_before_mb = get_memory_usage_mb()`.
+        - Immediately after `model.transcribe()` completes and the `transcript` is formed:
+            - Call `log_transcription_finished(started_at=transcription_started_at, audio_duration_seconds=audio_duration_seconds, memory_before_mb=memory_before_mb, logger=telemetry_logger)`.
 
 4.  **Add Unit Tests**:
-    *   Create `apps/ml/tests/test_telemetry.py`.
-    *   Write tests for `get_audio_duration_seconds` using `numpy` arrays.
-    *   Write tests for `log_transcription_finished` using `pytest`'s `caplog` fixture to assert that the correct log messages are generated. Mock `time.perf_counter()` and `get_memory_usage_mb()` if precise values are needed for assertions.
+    - Create `apps/ml/tests/test_telemetry.py`.
+    - Write tests for `get_audio_duration_seconds` using `numpy` arrays.
+    - Write tests for `log_transcription_finished` using `pytest`'s `caplog` fixture to assert that the correct log messages are generated. Mock `time.perf_counter()` and `get_memory_usage_mb()` if precise values are needed for assertions.
 
 ## Impact on System Architecture
 
@@ -112,7 +112,7 @@ The changes introduced in this PR were verified through a combination of compila
 1.  **Compilation Verification**: We ensured that all touched Python files compiled successfully using `python -m compileall apps/ml/main.py apps/ml/routers/asr.py apps/ml/services/telemetry.py`. This confirmed basic syntax correctness and module integrity.
 2.  **Direct Telemetry Smoke Test**: A manual smoke test was performed by directly invoking the telemetry logging helper. This involved simulating a transcription flow and observing the terminal output. The expected log message, `transcription finished in X.XX seconds for Y.YY seconds of audio clip`, was successfully printed, confirming the basic functionality of `log_transcription_finished`.
 3.  **Unit Tests (`apps/ml/tests/test_telemetry.py`)**:
-    *   `test_get_audio_duration_seconds`: This test verifies the accuracy of our audio duration calculation. It uses a `numpy.zeros` array to simulate audio data and asserts that `get_audio_duration_seconds` returns the correct duration based on a given sample rate.
-    *   `test_log_transcription_finished_outputs_latency_message`: This test uses `pytest`'s `caplog` fixture to capture log output. It calls `log_transcription_finished` with dummy data and then asserts that the captured log text contains the key phrases "transcription finished in", "for 2.00 seconds of audio clip", and "memory", ensuring the log message is correctly formatted and includes all expected metrics.
+    - `test_get_audio_duration_seconds`: This test verifies the accuracy of our audio duration calculation. It uses a `numpy.zeros` array to simulate audio data and asserts that `get_audio_duration_seconds` returns the correct duration based on a given sample rate.
+    - `test_log_transcription_finished_outputs_latency_message`: This test uses `pytest`'s `caplog` fixture to capture log output. It calls `log_transcription_finished` with dummy data and then asserts that the captured log text contains the key phrases "transcription finished in", "for 2.00 seconds of audio clip", and "memory", ensuring the log message is correctly formatted and includes all expected metrics.
 
 While these tests cover the core telemetry functions, full end-to-end integration testing of the ASR endpoint with actual audio files would be part of a broader system test suite to ensure the telemetry is correctly captured under various real-world conditions. This PR focused on establishing the robust logging mechanism itself.

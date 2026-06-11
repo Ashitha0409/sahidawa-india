@@ -20,26 +20,26 @@ Prior to this change, the critical user-facing messages displayed when a user lo
 This PR primarily involved refactoring existing React components to integrate `next-intl`'s `useTranslations` hook.
 
 **1. `apps/web/app/[locale]/offline/page.tsx`:**
-    *   We added `import { useTranslations } from "next-intl";` to the component.
-    *   Inside the `OfflinePage` functional component, we initialized the translation hook: `const t = useTranslations("offline");`. This `t` function is now responsible for fetching strings from the `offline` namespace in our translation files (e.g., `messages/en.json`, `messages/hi.json`).
-    *   All previously hardcoded English strings were replaced with calls to the `t` function, using specific keys:
-        *   The "Back Online!" headline changed from `"Back Online!"` to `{t("bannerOnline")}`.
-        *   The "Connection restored" description became `{t("descriptionOnline")}`.
-        *   The main "You're Offline" headline was replaced with `{t("title")}`.
-        *   The detailed description `SahiDawa needs an internet connection...` became `{t("description")}`.
-        *   The subtitle `Please check your Wi-Fi or mobile data...` was replaced with `{t("subtitle")}`.
-        *   The "Try Again" button text became `{isRetrying ? "Checking connection…" : t("tryAgain")}`.
-        *   The "Go to Home" link text became `{t("goHome")}`.
-        *   The footer text `SahiDawa will automatically sync...` was replaced with `{t("footer")}`.
-    *   The existing logic for connection detection, retry mechanisms, and redirection remains untouched, ensuring functional stability.
+_ We added `import { useTranslations } from "next-intl";` to the component.
+_ Inside the `OfflinePage` functional component, we initialized the translation hook: `const t = useTranslations("offline");`. This `t` function is now responsible for fetching strings from the `offline` namespace in our translation files (e.g., `messages/en.json`, `messages/hi.json`).
+_ All previously hardcoded English strings were replaced with calls to the `t` function, using specific keys:
+_ The "Back Online!" headline changed from `"Back Online!"` to `{t("bannerOnline")}`.
+_ The "Connection restored" description became `{t("descriptionOnline")}`.
+_ The main "You're Offline" headline was replaced with `{t("title")}`.
+_ The detailed description `SahiDawa needs an internet connection...` became `{t("description")}`.
+_ The subtitle `Please check your Wi-Fi or mobile data...` was replaced with `{t("subtitle")}`.
+_ The "Try Again" button text became `{isRetrying ? "Checking connection…" : t("tryAgain")}`.
+_ The "Go to Home" link text became `{t("goHome")}`.
+_ The footer text `SahiDawa will automatically sync...` was replaced with `{t("footer")}`.
+_ The existing logic for connection detection, retry mechanisms, and redirection remains untouched, ensuring functional stability.
 
 **2. `apps/web/components/OfflineBanner.tsx`:**
-    *   Similarly, we added `import { useTranslations } from "next-intl";` to this component.
-    *   Inside the `OfflineBanner` functional component, we initialized `const t = useTranslations("offline");`.
-    *   The dynamic banner text, which previously toggled between "You are offline" and "Back online", was updated to use translation keys: `{isCurrentlyOffline ? t("bannerOffline") : t("bannerOnline")}`.
-    *   The descriptive text below the banner title, which provided more context (e.g., "Medicine search and AI chat are unavailable"), was also localized: `{isCurrentlyOffline ? t("descriptionOffline") + (isTestMode ? " · Test mode" : "") : t("descriptionOnline")}`.
-    *   The `aria-label` for the dismiss button, crucial for accessibility, was updated from `"Dismiss offline notification"` to `{t("dismiss")}`.
-    *   The component's state management (`isDismissed`, `isVisible`) and the `useOfflineStatus` hook remain unchanged, focusing the PR purely on the presentation layer.
+_ Similarly, we added `import { useTranslations } from "next-intl";` to this component.
+_ Inside the `OfflineBanner` functional component, we initialized `const t = useTranslations("offline");`.
+_ The dynamic banner text, which previously toggled between "You are offline" and "Back online", was updated to use translation keys: `{isCurrentlyOffline ? t("bannerOffline") : t("bannerOnline")}`.
+_ The descriptive text below the banner title, which provided more context (e.g., "Medicine search and AI chat are unavailable"), was also localized: `{isCurrentlyOffline ? t("descriptionOffline") + (isTestMode ? " · Test mode" : "") : t("descriptionOnline")}`.
+_ The `aria-label` for the dismiss button, crucial for accessibility, was updated from `"Dismiss offline notification"` to `{t("dismiss")}`.
+_ The component's state management (`isDismissed`, `isVisible`) and the `useOfflineStatus` hook remain unchanged, focusing the PR purely on the presentation layer.
 
 In both components, the `offline` namespace was consistently used, ensuring that all related translation keys are grouped logically within our `next-intl` message files.
 
@@ -72,21 +72,21 @@ Should a similar localization task be required for another component, or if this
     }
     ```
 5.  **Replace Hardcoded Strings:** Iterate through the component's JSX and replace every hardcoded string with a call to the `t` function, passing a unique key for that string.
-    *   **Example for text content:**
+    - **Example for text content:**
         ```jsx
         // Before
         <p>Hello World</p>
         // After
         <p>{t("helloWorld")}</p>
         ```
-    *   **Example for attributes (like `aria-label`):**
+    - **Example for attributes (like `aria-label`):**
         ```jsx
         // Before
         <button aria-label="Close" />
         // After
         <button aria-label={t("closeButtonLabel")} />
         ```
-    *   **Example for dynamic strings:**
+    - **Example for dynamic strings:**
         ```jsx
         // Before
         <p>{isOnline ? "Online" : "Offline"}</p>
@@ -94,22 +94,22 @@ Should a similar localization task be required for another component, or if this
         <p>{isOnline ? t("statusOnline") : t("statusOffline")}</p>
         ```
 6.  **Update Translation Files:** Add the new translation keys and their corresponding localized values to the appropriate `messages/{locale}.json` files under the specified namespace (`offline` in this case).
-    *   Example `messages/en.json`:
+    - Example `messages/en.json`:
         ```json
         {
-          "offline": {
-            "title": "You're Offline",
-            "description": "SahiDawa needs an internet connection...",
-            "bannerOnline": "Back Online!",
-            "dismiss": "Dismiss offline notification"
-          }
+            "offline": {
+                "title": "You're Offline",
+                "description": "SahiDawa needs an internet connection...",
+                "bannerOnline": "Back Online!",
+                "dismiss": "Dismiss offline notification"
+            }
         }
         ```
 7.  **Test Thoroughly:**
-    *   Run the application locally.
-    *   Navigate to the component's route (e.g., `/en/offline`, `/hi/offline`).
-    *   Change the locale in the URL to verify translations for each supported language.
-    *   For components like `OfflinePage` and `OfflineBanner`, simulate network conditions (e.g., using Chrome DevTools' Network tab to go "Offline") to ensure the correct localized messages are displayed in different connectivity states.
+    - Run the application locally.
+    - Navigate to the component's route (e.g., `/en/offline`, `/hi/offline`).
+    - Change the locale in the URL to verify translations for each supported language.
+    - For components like `OfflinePage` and `OfflineBanner`, simulate network conditions (e.g., using Chrome DevTools' Network tab to go "Offline") to ensure the correct localized messages are displayed in different connectivity states.
 
 ## Impact on System Architecture
 
@@ -128,11 +128,12 @@ The author performed comprehensive local testing and verification for this chang
 1.  **Multilingual Behavior:** The author verified that the offline page and banner displayed correctly across different localized routes (e.g., `/en/offline`, `/hi/offline`), confirming that `next-intl` was correctly fetching and rendering the appropriate strings for each locale.
 2.  **Offline Simulation:** The core functionality was tested by simulating an offline network state in the browser (using the Network tab in developer tools). This confirmed that the `OfflinePage` was rendered correctly and the `OfflineBanner` appeared as expected, both with localized content.
 3.  **Screenshots/Proof of Work:** Screenshots were provided to visually demonstrate:
-    *   The offline page displaying localized content.
-    *   The global offline banner appearing with localized messages during an offline simulation.
-    *   The translation behavior working correctly when switching between localized routes.
+    - The offline page displaying localized content.
+    - The global offline banner appearing with localized messages during an offline simulation.
+    - The translation behavior working correctly when switching between localized routes.
 
 **Edge Cases:**
-*   **Missing Translation Keys:** If a translation key used in `t("key")` is missing from the `offline` namespace in a specific locale's message file, `next-intl` typically falls back to the default locale's value or displays the key itself, depending on configuration. This behavior is understood and handled by our `next-intl` setup.
-*   **Dynamic Content:** The PR correctly handles dynamic content within strings (e.g., `(Attempt {retryCount})` or `(isTestMode ? " · Test mode" : "")`) by concatenating the dynamic part with the translated string, ensuring flexibility.
-*   **Connectivity Restoration:** The existing logic for detecting when the connection is restored and redirecting the user remains unchanged and was implicitly verified as part of the offline simulation.
+
+- **Missing Translation Keys:** If a translation key used in `t("key")` is missing from the `offline` namespace in a specific locale's message file, `next-intl` typically falls back to the default locale's value or displays the key itself, depending on configuration. This behavior is understood and handled by our `next-intl` setup.
+- **Dynamic Content:** The PR correctly handles dynamic content within strings (e.g., `(Attempt {retryCount})` or `(isTestMode ? " · Test mode" : "")`) by concatenating the dynamic part with the translated string, ensuring flexibility.
+- **Connectivity Restoration:** The existing logic for detecting when the connection is restored and redirecting the user remains unchanged and was implicitly verified as part of the offline simulation.

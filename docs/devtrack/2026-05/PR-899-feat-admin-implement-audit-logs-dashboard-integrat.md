@@ -22,42 +22,42 @@ Before this PR, the Admin Dashboard's "Audit Logs" tab was a placeholder, always
 ### Backend (`apps/api`)
 
 1.  **Audit Logs Controller (`apps/api/src/controllers/admin.controller.ts`)**:
-    *   We introduced a new asynchronous function, `getAuditLogs`, to handle the retrieval of audit records.
-    *   This function parses `page` and `limit` query parameters from the request, defaulting to `1` and `20` respectively, to support pagination. An `offset` is calculated based on these parameters.
-    *   It queries the `audit_logs` table in Supabase, selecting all columns (`*`) and requesting an exact `count` of total records. The results are ordered by `created_at` in descending order to show the most recent logs first, and a `range` is applied for pagination.
-    *   Robust error handling is in place: if the Supabase query fails, a `500` status with a "Failed to fetch audit logs" message is returned.
-    *   A crucial `formatDetails` helper function was implemented to provide human-readable descriptions for specific audit actions:
-        *   For actions starting with `STATUS_` (e.g., `STATUS_VERIFIED_FAKE`), it extracts the `status` from the `details` JSON and formats it as "Updated report status to \[status]".
-        *   For `CREATE_MEDICINE` actions, it extracts `brand_name` and `generic_name` to form "Created new medicine: \[brand name] (\[generic name])".
-        *   For other actions, it falls back to displaying the action type and a JSON string representation of the `details`.
-        *   It includes `try-catch` blocks to safely parse `details` if it's a JSON string and gracefully handles parsing errors by defaulting to the raw `action` string.
-    *   The final response includes the `formattedLogs` array and a `meta` object containing `total`, `page`, `limit`, and `totalPages` for client-side pagination management.
+    - We introduced a new asynchronous function, `getAuditLogs`, to handle the retrieval of audit records.
+    - This function parses `page` and `limit` query parameters from the request, defaulting to `1` and `20` respectively, to support pagination. An `offset` is calculated based on these parameters.
+    - It queries the `audit_logs` table in Supabase, selecting all columns (`*`) and requesting an exact `count` of total records. The results are ordered by `created_at` in descending order to show the most recent logs first, and a `range` is applied for pagination.
+    - Robust error handling is in place: if the Supabase query fails, a `500` status with a "Failed to fetch audit logs" message is returned.
+    - A crucial `formatDetails` helper function was implemented to provide human-readable descriptions for specific audit actions:
+        - For actions starting with `STATUS_` (e.g., `STATUS_VERIFIED_FAKE`), it extracts the `status` from the `details` JSON and formats it as "Updated report status to \[status]".
+        - For `CREATE_MEDICINE` actions, it extracts `brand_name` and `generic_name` to form "Created new medicine: \[brand name] (\[generic name])".
+        - For other actions, it falls back to displaying the action type and a JSON string representation of the `details`.
+        - It includes `try-catch` blocks to safely parse `details` if it's a JSON string and gracefully handles parsing errors by defaulting to the raw `action` string.
+    - The final response includes the `formattedLogs` array and a `meta` object containing `total`, `page`, `limit`, and `totalPages` for client-side pagination management.
 
 2.  **Protected API Route (`apps/api/src/routes/admin.routes.ts`)**:
-    *   We registered a new `GET` route, `/logs`, within the `/api/v1/admin` namespace.
-    *   This route is directly mapped to our new `getAuditLogs` controller function.
-    *   Crucially, this route leverages our existing middleware setup, specifically `requireAuth` and `requireRole('admin', 'moderator')`, which are applied globally to all admin routes. This ensures that only authenticated users with either 'admin' or 'moderator' roles can access the sensitive audit log information, maintaining strict security and access control.
+    - We registered a new `GET` route, `/logs`, within the `/api/v1/admin` namespace.
+    - This route is directly mapped to our new `getAuditLogs` controller function.
+    - Crucially, this route leverages our existing middleware setup, specifically `requireAuth` and `requireRole('admin', 'moderator')`, which are applied globally to all admin routes. This ensures that only authenticated users with either 'admin' or 'moderator' roles can access the sensitive audit log information, maintaining strict security and access control.
 
 ### Frontend (`apps/web`)
 
 1.  **Dynamic State Management (`apps/web/app/[locale]/admin/dashboard/page.tsx`)**:
-    *   The previously hardcoded `const [auditLogs] = useState<AuditEntry[]>([]);` was replaced with a dynamic state: `const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);`.
-    *   A new `logsLoading` boolean state (`const [logsLoading, setLogsLoading] = useState(false);`) was added to manage the loading indicator's visibility.
+    - The previously hardcoded `const [auditLogs] = useState<AuditEntry[]>([]);` was replaced with a dynamic state: `const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);`.
+    - A new `logsLoading` boolean state (`const [logsLoading, setLogsLoading] = useState(false);`) was added to manage the loading indicator's visibility.
 
 2.  **Audit Log Fetching Logic**:
-    *   A `fetchAuditLogs` `useCallback` hook was implemented.
-    *   This function sets `logsLoading` to `true` at the start of the fetch operation.
-    *   It makes an authenticated `fetch` request to our new backend endpoint: ``${API_BASE}/logs``, including `authHeaders()` for authorization.
-    *   Upon a successful response (`res.ok`), it parses the JSON data and updates the `auditLogs` state with `data.logs`. If `data.logs` is null or undefined, it defaults to an empty array.
-    *   A `catch` block is included for silent failure, ensuring the UI doesn't break on network errors, though the logs list will remain empty.
-    *   The `finally` block ensures `logsLoading` is set back to `false` regardless of success or failure.
+    - A `fetchAuditLogs` `useCallback` hook was implemented.
+    - This function sets `logsLoading` to `true` at the start of the fetch operation.
+    - It makes an authenticated `fetch` request to our new backend endpoint: `${API_BASE}/logs`, including `authHeaders()` for authorization.
+    - Upon a successful response (`res.ok`), it parses the JSON data and updates the `auditLogs` state with `data.logs`. If `data.logs` is null or undefined, it defaults to an empty array.
+    - A `catch` block is included for silent failure, ensuring the UI doesn't break on network errors, though the logs list will remain empty.
+    - The `finally` block ensures `logsLoading` is set back to `false` regardless of success or failure.
 
 3.  **Lazy Loading and UI Integration**:
-    *   An `useEffect` hook was added to trigger `fetchAuditLogs` only when the `tab` state (representing the active dashboard tab) is equal to `"logs"`. This prevents unnecessary API calls when the dashboard initially loads or when other tabs are active, optimizing performance and resource usage.
-    *   The JSX rendering for the Audit Logs tab now conditionally displays:
-        *   A loading indicator (`Loader2` component with "Loading audit logs…") when `logsLoading` is `true`.
-        *   The "No audit entries yet" message if `logsLoading` is `false` and `auditLogs.length` is `0`.
-        *   The actual list of audit entries once `auditLogs` has data and `logsLoading` is `false`.
+    - An `useEffect` hook was added to trigger `fetchAuditLogs` only when the `tab` state (representing the active dashboard tab) is equal to `"logs"`. This prevents unnecessary API calls when the dashboard initially loads or when other tabs are active, optimizing performance and resource usage.
+    - The JSX rendering for the Audit Logs tab now conditionally displays:
+        - A loading indicator (`Loader2` component with "Loading audit logs…") when `logsLoading` is `true`.
+        - The "No audit entries yet" message if `logsLoading` is `false` and `auditLogs.length` is `0`.
+        - The actual list of audit entries once `auditLogs` has data and `logsLoading` is `false`.
 
 ## Technical Decisions
 
@@ -77,49 +77,49 @@ To re-implement this audit logs dashboard integration from scratch, a contributo
 ### Backend Implementation
 
 1.  **Define the Audit Logs Controller**:
-    *   Create or modify `apps/api/src/controllers/admin.controller.ts`.
-    *   Add an `async` function `getAuditLogs` that accepts `AuthenticatedRequest` and `Response` objects.
-    *   Inside, parse `page` and `limit` from `req.query`, defaulting to `1` and `20`. Calculate `offset = (page - 1) * limit`.
-    *   Implement the Supabase query:
+    - Create or modify `apps/api/src/controllers/admin.controller.ts`.
+    - Add an `async` function `getAuditLogs` that accepts `AuthenticatedRequest` and `Response` objects.
+    - Inside, parse `page` and `limit` from `req.query`, defaulting to `1` and `20`. Calculate `offset = (page - 1) * limit`.
+    - Implement the Supabase query:
         ```typescript
         const { data, error, count } = await supabase
-          .from('audit_logs')
-          .select('*', { count: 'exact' }) // Select all columns and get total count
-          .order('created_at', { ascending: false }) // Order by creation time, newest first
-          .range(offset, offset + limit - 1); // Apply pagination range
+            .from("audit_logs")
+            .select("*", { count: "exact" }) // Select all columns and get total count
+            .order("created_at", { ascending: false }) // Order by creation time, newest first
+            .range(offset, offset + limit - 1); // Apply pagination range
         ```
-    *   Add error handling for `supabase` query failures, returning a `500` status.
-    *   Implement the `formatDetails` helper function as seen in the diff, including `JSON.parse` with `try-catch` and specific formatting logic for `STATUS_` and `CREATE_MEDICINE` actions.
-    *   Map the fetched `data` using `formatDetails` to create `formattedLogs`.
-    *   Construct the JSON response with `logs: formattedLogs` and `meta: { total, page, limit, totalPages }`.
-    *   Wrap the entire controller logic in a `try-catch` block for general error handling.
+    - Add error handling for `supabase` query failures, returning a `500` status.
+    - Implement the `formatDetails` helper function as seen in the diff, including `JSON.parse` with `try-catch` and specific formatting logic for `STATUS_` and `CREATE_MEDICINE` actions.
+    - Map the fetched `data` using `formatDetails` to create `formattedLogs`.
+    - Construct the JSON response with `logs: formattedLogs` and `meta: { total, page, limit, totalPages }`.
+    - Wrap the entire controller logic in a `try-catch` block for general error handling.
 
 2.  **Register the API Route**:
-    *   Modify `apps/api/src/routes/admin.routes.ts`.
-    *   Import `getAuditLogs` from the controller.
-    *   Add the route definition: `router.get('/logs', getAuditLogs);`.
-    *   Ensure this route is placed *after* the existing `router.use(requireAuth);` and `router.use(requireRole('admin', 'moderator'));` middleware calls to automatically apply security.
+    - Modify `apps/api/src/routes/admin.routes.ts`.
+    - Import `getAuditLogs` from the controller.
+    - Add the route definition: `router.get('/logs', getAuditLogs);`.
+    - Ensure this route is placed _after_ the existing `router.use(requireAuth);` and `router.use(requireRole('admin', 'moderator'));` middleware calls to automatically apply security.
 
 3.  **Write Backend Tests**:
-    *   Create a new test file `apps/api/tests/adminLogs.test.ts`.
-    *   Set up environment variables and mock `WebSocket` for Supabase client initialization.
-    *   **Crucially, mock the Supabase client (`../src/db/client`)** to control its `from`, `select`, `order`, and `range` methods, allowing you to return predefined test data or errors.
-    *   **Mock the authentication middleware (`../src/middleware/auth`)** to automatically succeed and populate `req.user` with a test admin user, bypassing actual authentication during tests.
-    *   Use `supertest` to send HTTP requests to `/api/v1/admin/logs`.
-    *   Write test cases to verify:
-        *   Successful retrieval of logs with correct formatting for different `action` types.
-        *   Correct pagination metadata (`total`, `page`, `limit`, `totalPages`).
-        *   Correct Supabase query parameters (`from`, `select`, `order`, `range`).
-        *   Graceful error handling when Supabase returns an error.
-        *   (Implicitly, due to middleware mocks) that the route is protected.
+    - Create a new test file `apps/api/tests/adminLogs.test.ts`.
+    - Set up environment variables and mock `WebSocket` for Supabase client initialization.
+    - **Crucially, mock the Supabase client (`../src/db/client`)** to control its `from`, `select`, `order`, and `range` methods, allowing you to return predefined test data or errors.
+    - **Mock the authentication middleware (`../src/middleware/auth`)** to automatically succeed and populate `req.user` with a test admin user, bypassing actual authentication during tests.
+    - Use `supertest` to send HTTP requests to `/api/v1/admin/logs`.
+    - Write test cases to verify:
+        - Successful retrieval of logs with correct formatting for different `action` types.
+        - Correct pagination metadata (`total`, `page`, `limit`, `totalPages`).
+        - Correct Supabase query parameters (`from`, `select`, `order`, `range`).
+        - Graceful error handling when Supabase returns an error.
+        - (Implicitly, due to middleware mocks) that the route is protected.
 
 ### Frontend Implementation
 
 1.  **Update Dashboard Page (`apps/web/app/[locale]/admin/dashboard/page.tsx`)**:
-    *   Import `Loader2` from `@/components/ui/loader` or similar for the loading spinner.
-    *   Replace the static `auditLogs` state with `const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);`.
-    *   Add a new state for loading: `const [logsLoading, setLogsLoading] = useState(false);`.
-    *   Implement the `fetchAuditLogs` function using `useCallback`:
+    - Import `Loader2` from `@/components/ui/loader` or similar for the loading spinner.
+    - Replace the static `auditLogs` state with `const [auditLogs, setAuditLogs] = useState<AuditEntry[]>([]);`.
+    - Add a new state for loading: `const [logsLoading, setLogsLoading] = useState(false);`.
+    - Implement the `fetchAuditLogs` function using `useCallback`:
         ```typescript
         const fetchAuditLogs = useCallback(async () => {
             setLogsLoading(true);
@@ -136,7 +136,7 @@ To re-implement this audit logs dashboard integration from scratch, a contributo
             }
         }, []); // Dependencies for useCallback
         ```
-    *   Add a `useEffect` hook to trigger fetching only when the "Audit Logs" tab is active:
+    - Add a `useEffect` hook to trigger fetching only when the "Audit Logs" tab is active:
         ```typescript
         useEffect(() => {
             if (tab === "logs") {
@@ -144,21 +144,25 @@ To re-implement this audit logs dashboard integration from scratch, a contributo
             }
         }, [tab, fetchAuditLogs]);
         ```
-    *   Modify the JSX within the "Audit Logs" tab section to conditionally render based on `logsLoading` and `auditLogs.length`:
+    - Modify the JSX within the "Audit Logs" tab section to conditionally render based on `logsLoading` and `auditLogs.length`:
         ```jsx
-        {logsLoading ? (
-            <div className="flex items-center justify-center gap-2 py-16 text-slate-400">
-                <Loader2 className="h-5 w-5 animate-spin" /> Loading audit logs…
-            </div>
-        ) : auditLogs.length === 0 ? (
-            <div className="py-16 text-center text-sm text-slate-400">
-                No audit entries yet.
-            </div>
-        ) : (
-            {/* Render your audit logs list here, iterating over auditLogs */}
-        )}
+        {
+            logsLoading ? (
+                <div className="flex items-center justify-center gap-2 py-16 text-slate-400">
+                    <Loader2 className="h-5 w-5 animate-spin" /> Loading audit logs…
+                </div>
+            ) : auditLogs.length === 0 ? (
+                <div className="py-16 text-center text-sm text-slate-400">
+                    No audit entries yet.
+                </div>
+            ) : (
+                {
+                    /* Render your audit logs list here, iterating over auditLogs */
+                }
+            );
+        }
         ```
-    *   Ensure `API_BASE` and `authHeaders()` are correctly defined and accessible.
+    - Ensure `API_BASE` and `authHeaders()` are correctly defined and accessible.
 
 ## Impact on System Architecture
 
@@ -176,20 +180,20 @@ This change significantly enhances the observability and accountability of our S
 
 We created a dedicated test file, `apps/api/tests/adminLogs.test.ts`, to rigorously verify the backend implementation.
 
-*   **Audit Log Retrieval**: We confirmed that the `GET /api/v1/admin/logs` endpoint successfully fetches audit records from the mocked Supabase `audit_logs` table.
-*   **Pagination Metadata**: Tests verified that the API response correctly includes `meta` object with `total`, `page`, `limit`, and `totalPages` based on the mocked data and query parameters.
-*   **Log Formatting Logic**: Extensive tests were conducted to ensure the `formatDetails` function correctly transforms raw `details` JSON into human-readable strings for various action types, specifically `STATUS_` actions (e.g., "Updated report status to verified\_fake") and `CREATE_MEDICINE` actions (e.g., "Created new medicine: Mock Brand (Mock Generic)"). We also verified the fallback behavior for unknown actions or malformed `details`.
-*   **Error Handling Behavior**: We simulated Supabase query failures and confirmed that the API gracefully returns a `500` status with an appropriate error message ("Failed to fetch audit logs").
-*   **Middleware Integration**: By mocking `requireAuth` and `requireRole` to succeed, our tests implicitly verified that the route is intended to be protected by these middlewares, ensuring only authorized users can access the endpoint.
+- **Audit Log Retrieval**: We confirmed that the `GET /api/v1/admin/logs` endpoint successfully fetches audit records from the mocked Supabase `audit_logs` table.
+- **Pagination Metadata**: Tests verified that the API response correctly includes `meta` object with `total`, `page`, `limit`, and `totalPages` based on the mocked data and query parameters.
+- **Log Formatting Logic**: Extensive tests were conducted to ensure the `formatDetails` function correctly transforms raw `details` JSON into human-readable strings for various action types, specifically `STATUS_` actions (e.g., "Updated report status to verified_fake") and `CREATE_MEDICINE` actions (e.g., "Created new medicine: Mock Brand (Mock Generic)"). We also verified the fallback behavior for unknown actions or malformed `details`.
+- **Error Handling Behavior**: We simulated Supabase query failures and confirmed that the API gracefully returns a `500` status with an appropriate error message ("Failed to fetch audit logs").
+- **Middleware Integration**: By mocking `requireAuth` and `requireRole` to succeed, our tests implicitly verified that the route is intended to be protected by these middlewares, ensuring only authorized users can access the endpoint.
 
 ### Frontend Testing
 
 Verification on the frontend involved manual testing and observation of network behavior:
 
-*   **API Request Trigger**: We verified that the `fetchAuditLogs` API request is only triggered when the "Audit Logs" tab within the Admin Dashboard is actively selected, confirming the lazy-loading mechanism.
-*   **Audit Entries Rendering**: Upon successful data fetch, we confirmed that the retrieved audit entries are correctly rendered in the dashboard UI, displaying the formatted details and other log information.
-*   **Loading State**: We observed that a loading indicator (`Loader2` component) appears while the audit logs are being fetched, providing clear feedback to the user.
-*   **Empty State**: We confirmed that the "No audit entries yet" message correctly appears only when no audit logs are returned from the backend (or if the fetch fails silently), and not as a permanent placeholder.
+- **API Request Trigger**: We verified that the `fetchAuditLogs` API request is only triggered when the "Audit Logs" tab within the Admin Dashboard is actively selected, confirming the lazy-loading mechanism.
+- **Audit Entries Rendering**: Upon successful data fetch, we confirmed that the retrieved audit entries are correctly rendered in the dashboard UI, displaying the formatted details and other log information.
+- **Loading State**: We observed that a loading indicator (`Loader2` component) appears while the audit logs are being fetched, providing clear feedback to the user.
+- **Empty State**: We confirmed that the "No audit entries yet" message correctly appears only when no audit logs are returned from the backend (or if the fetch fails silently), and not as a permanent placeholder.
 
 ### TypeScript Verification
 

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Link, useRouter } from "@/i18n/routing";
 import { User, ShieldCheck, Bell, ChevronRight, ArrowLeft, LogIn, LogOut } from "lucide-react";
+import ABHABadge from "@/components/ABHABadge";
+import { getABHAStatus } from "@/lib/api/abha";
 
 const ACCESS_TOKEN_KEY = "sb-access-token";
 
@@ -77,6 +79,9 @@ function readSessionFromToken(token: string | null): {
 export default function ProfilePage() {
     const router = useRouter();
     const [session, setSession] = useState<ProfileSession>({ status: "checking" });
+    const [abhaLinked, setAbhaLinked] = useState(false);
+    const [abhaAddress, setAbhaAddress] = useState<string | null>(null);
+    const [loadingAbha, setLoadingAbha] = useState(false);
 
     const accountTitle =
         session.status === "authenticated"
@@ -99,6 +104,21 @@ export default function ProfilePage() {
         }
 
         setSession(result.session);
+
+        if (result.session.status === "authenticated") {
+            setLoadingAbha(true);
+            getABHAStatus()
+                .then((data) => {
+                    setAbhaLinked(data.linked);
+                    setAbhaAddress(data.link?.abha_address ?? null);
+                })
+                .catch((err) => {
+                    console.error("Failed to load ABHA status", err);
+                })
+                .finally(() => {
+                    setLoadingAbha(false);
+                });
+        }
     }, []);
 
     const handleSignOut = () => {
@@ -157,6 +177,12 @@ export default function ProfilePage() {
                                 <p className="mt-1 text-sm text-(--color-text-secondary)">
                                     {accountSubtitle}
                                 </p>
+
+                                {session.status === "authenticated" && !loadingAbha && (
+                                    <div className="mt-2">
+                                        <ABHABadge linked={abhaLinked} abhaAddress={abhaAddress} />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -173,6 +199,24 @@ export default function ProfilePage() {
 
                     {/* Menu Items */}
                     <div className="divide-y divide-(--color-border-muted)">
+                        {session.status === "authenticated" && (
+                            <Link
+                                href="/abha-records"
+                                className="flex w-full items-center justify-between p-5 transition-colors hover:bg-(--color-surface-muted)"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheck
+                                        size={20}
+                                        className="text-emerald-600 dark:text-emerald-400"
+                                    />
+                                    <span className="font-semibold text-(--color-text-primary)">
+                                        ABHA Health Records
+                                    </span>
+                                </div>
+                                <ChevronRight size={18} className="text-(--color-text-muted)" />
+                            </Link>
+                        )}
+
                         {session.status === "authenticated" && (
                             <button
                                 type="button"

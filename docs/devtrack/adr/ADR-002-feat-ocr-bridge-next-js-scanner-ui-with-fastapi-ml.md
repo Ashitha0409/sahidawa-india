@@ -20,14 +20,15 @@ An Express API Gateway (`apps/api`) was implemented as the intermediary for hand
 
 ## Alternatives Considered
 
-| Alternative | Why Rejected |
-|---|---|
-| **Direct Client-to-ML Service Communication** | Exposes the ML service directly to the public internet, bypassing the existing API Gateway's security, authentication, authorization, rate limiting, and logging infrastructure. Introduces CORS complexities and tightly couples the frontend to the ML service's network location. |
+| Alternative                                    | Why Rejected                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Direct Client-to-ML Service Communication**  | Exposes the ML service directly to the public internet, bypassing the existing API Gateway's security, authentication, authorization, rate limiting, and logging infrastructure. Introduces CORS complexities and tightly couples the frontend to the ML service's network location.                                                         |
 | **Integrating OCR Logic into Express Gateway** | Violates separation of concerns by embedding specialized ML processing within the general-purpose API Gateway. Express/Node.js is not optimized for ML workloads, which are better handled by Python/FastAPI. This would increase the Gateway's complexity, resource usage, and hinder independent scaling and deployment of the ML service. |
 
 ## Consequences
 
 **Positive:**
+
 - Enabled real-time, genuine OCR extraction, replacing mock data and significantly enhancing platform utility.
 - Maintained a clear separation of concerns by leveraging a specialized FastAPI ML service for OCR, while the Express Gateway handles API routing and security.
 - Centralized API management (logging, error handling, potential future authentication/authorization) through the Express Gateway.
@@ -35,6 +36,7 @@ An Express API Gateway (`apps/api`) was implemented as the intermediary for hand
 - Provided immediate and dynamic user feedback through the "OCR Extracted Text Debug Log" and graceful error toasts.
 
 **Trade-offs:**
+
 - Introduced an additional network hop (Express Gateway) between the frontend and the ML service, potentially adding marginal latency.
 - Increased the Express Gateway's operational responsibility and resource usage by handling multi-part file uploads in memory (`multer.memoryStorage()`).
 - Added `multer` as a new dependency to the Express Gateway, increasing the project's dependency footprint.

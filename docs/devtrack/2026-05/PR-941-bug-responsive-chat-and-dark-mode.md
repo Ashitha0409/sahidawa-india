@@ -22,25 +22,25 @@ Before this PR, the AI Chatbot interface presented several user experience chall
 The changes primarily focus on the `apps/web` frontend, leveraging Tailwind CSS for responsive and dark mode styling.
 
 1.  **`apps/web/app/[locale]/components/Chatbot.tsx`**:
-    *   **Dark Mode Integration**: We introduced `dark:` prefixed utility classes to several key elements within the `Chatbot` component to ensure proper styling in dark mode.
-        *   The chat header `div` (containing the bot icon and title) now includes `dark:bg-green-700`, changing its background from `bg-green-600` in dark mode.
-        *   Bot messages, which are `self-start` and have a `border`, retain their `bg-(--color-surface-page)` and `text-(--color-text-primary)` which are theme-aware by default.
-        *   User messages, which are `self-end`, were updated from `bg-green-600` to `bg-green-600 dark:bg-green-700`, ensuring their background also darkens.
-        *   The send button `button` was updated from `bg-green-600` to `bg-green-600 dark:bg-green-700 dark:hover:bg-green-800`, providing a darker background and hover state.
-        *   The main chatbot toggle button (which opens/closes the chat panel) was also updated from `bg-green-600` to `bg-green-600 dark:bg-green-700 dark:hover:bg-green-800`.
+    - **Dark Mode Integration**: We introduced `dark:` prefixed utility classes to several key elements within the `Chatbot` component to ensure proper styling in dark mode.
+        - The chat header `div` (containing the bot icon and title) now includes `dark:bg-green-700`, changing its background from `bg-green-600` in dark mode.
+        - Bot messages, which are `self-start` and have a `border`, retain their `bg-(--color-surface-page)` and `text-(--color-text-primary)` which are theme-aware by default.
+        - User messages, which are `self-end`, were updated from `bg-green-600` to `bg-green-600 dark:bg-green-700`, ensuring their background also darkens.
+        - The send button `button` was updated from `bg-green-600` to `bg-green-600 dark:bg-green-700 dark:hover:bg-green-800`, providing a darker background and hover state.
+        - The main chatbot toggle button (which opens/closes the chat panel) was also updated from `bg-green-600` to `bg-green-600 dark:bg-green-700 dark:hover:bg-green-800`.
 
 2.  **`apps/web/app/[locale]/components/chatbotPosition.ts`**:
-    *   This file is responsible for dynamically generating CSS classes that control the chatbot panel's position and size based on the current route (`pathname`).
-    *   **Responsive Sizing**: We refactored the `DEFAULT_CHATBOT_PANEL_CLASSES` and `MAP_CHATBOT_PANEL_CLASSES` to implement a mobile-first responsive design for the chat panel's width and height.
-        *   For `DEFAULT_CHATBOT_PANEL_CLASSES`, the fixed `w-[350px]` was replaced with `w-[min(22rem,calc(100vw-1.5rem))]`, and `h-[450px]` was replaced with `h-[min(28rem,calc(100dvh-8rem))]`. These new classes ensure the panel takes up a flexible, constrained width and height on smaller screens, adapting to the viewport.
-        *   Media query prefixes `md:w-[350px]` and `md:h-[450px]` were added to `DEFAULT_CHATBOT_PANEL_CLASSES` to restore the original fixed dimensions for medium-sized screens and above.
-        *   Similarly, for `MAP_CHATBOT_PANEL_CLASSES`, the height was updated from `h-[min(28rem,calc(100vh-8rem))]` to `h-[min(28rem,calc(100dvh-8rem))]`, utilizing `100dvh` for more accurate dynamic viewport height on mobile devices.
+    - This file is responsible for dynamically generating CSS classes that control the chatbot panel's position and size based on the current route (`pathname`).
+    - **Responsive Sizing**: We refactored the `DEFAULT_CHATBOT_PANEL_CLASSES` and `MAP_CHATBOT_PANEL_CLASSES` to implement a mobile-first responsive design for the chat panel's width and height.
+        - For `DEFAULT_CHATBOT_PANEL_CLASSES`, the fixed `w-[350px]` was replaced with `w-[min(22rem,calc(100vw-1.5rem))]`, and `h-[450px]` was replaced with `h-[min(28rem,calc(100dvh-8rem))]`. These new classes ensure the panel takes up a flexible, constrained width and height on smaller screens, adapting to the viewport.
+        - Media query prefixes `md:w-[350px]` and `md:h-[450px]` were added to `DEFAULT_CHATBOT_PANEL_CLASSES` to restore the original fixed dimensions for medium-sized screens and above.
+        - Similarly, for `MAP_CHATBOT_PANEL_CLASSES`, the height was updated from `h-[min(28rem,calc(100vh-8rem))]` to `h-[min(28rem,calc(100dvh-8rem))]`, utilizing `100dvh` for more accurate dynamic viewport height on mobile devices.
 
 3.  **`apps/web/app/components/health/components/TrustBar.tsx`**:
-    *   **Conditional Visibility**: The main `div` containing the trust badges was updated with the Tailwind CSS classes `hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-2 md:flex`. This change ensures that the `TrustBar` is hidden by default on small screens (`hidden`) and only becomes visible (`md:flex`) on medium-sized screens and larger, thus decluttering the mobile UI.
+    - **Conditional Visibility**: The main `div` containing the trust badges was updated with the Tailwind CSS classes `hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 px-4 py-2 md:flex`. This change ensures that the `TrustBar` is hidden by default on small screens (`hidden`) and only becomes visible (`md:flex`) on medium-sized screens and larger, thus decluttering the mobile UI.
 
 4.  **`apps/web/tests/chatbot-position.test.ts`**:
-    *   **Updated Unit Tests**: The existing unit test for `getChatbotPanelClasses` was updated to reflect the new responsive sizing logic. Specifically, the test case for the default chatbot panel position (e.g., on `/en/health`) now asserts the presence of the new `w-[min(22rem,calc(100vw-1.5rem))]`, `h-[min(28rem,calc(100dvh-8rem))]`, `md:w-[350px]`, and `md:h-[450px]` classes, and explicitly checks that the old fixed `h-[450px]` class is no longer present. This ensures the dynamic class generation correctly applies the new responsive rules.
+    - **Updated Unit Tests**: The existing unit test for `getChatbotPanelClasses` was updated to reflect the new responsive sizing logic. Specifically, the test case for the default chatbot panel position (e.g., on `/en/health`) now asserts the presence of the new `w-[min(22rem,calc(100vw-1.5rem))]`, `h-[min(28rem,calc(100dvh-8rem))]`, `md:w-[350px]`, and `md:h-[450px]` classes, and explicitly checks that the old fixed `h-[450px]` class is no longer present. This ensures the dynamic class generation correctly applies the new responsive rules.
 
 ## Technical Decisions
 
@@ -57,23 +57,23 @@ Our primary technical decisions revolved around enhancing the user interface usi
 To re-implement or extend these features, a contributor would follow these steps:
 
 1.  **Dark Mode Integration**:
-    *   **Identify Components**: Determine which UI elements within a component need distinct dark mode styling.
-    *   **Apply Tailwind `dark:` Prefix**: For each element, add Tailwind CSS utility classes prefixed with `dark:` to define its appearance in dark mode. For example, to change a background color, use `bg-green-600 dark:bg-green-700`.
-    *   **Ensure Theme-Awareness**: Verify that global text and surface colors (e.g., `text-(--color-text-primary)`, `bg-(--color-surface-page)`) are already defined in a theme-aware manner, typically through CSS variables managed by the main application theme.
-    *   **Test**: Toggle dark mode in the browser's developer tools or system settings to visually verify the changes.
+    - **Identify Components**: Determine which UI elements within a component need distinct dark mode styling.
+    - **Apply Tailwind `dark:` Prefix**: For each element, add Tailwind CSS utility classes prefixed with `dark:` to define its appearance in dark mode. For example, to change a background color, use `bg-green-600 dark:bg-green-700`.
+    - **Ensure Theme-Awareness**: Verify that global text and surface colors (e.g., `text-(--color-text-primary)`, `bg-(--color-surface-page)`) are already defined in a theme-aware manner, typically through CSS variables managed by the main application theme.
+    - **Test**: Toggle dark mode in the browser's developer tools or system settings to visually verify the changes.
 
 2.  **Mobile-First Responsiveness for Dynamic Panels**:
-    *   **Define Base (Mobile) Styles**: For components like the chatbot panel that require dynamic sizing, define their default (mobile) width and height using flexible units and functions. For example, `w-[min(22rem,calc(100vw-1.5rem))]` for width and `h-[min(28rem,calc(100dvh-8rem))]` for height. The `min()` function ensures the panel doesn't exceed a maximum size, while `calc()` makes it relative to the viewport. Use `100dvh` for height to account for dynamic mobile browser UI.
-    *   **Apply Breakpoint Overrides**: Use Tailwind's responsive prefixes (e.g., `md:`, `lg:`) to apply different styles for larger screens. For instance, `md:w-[350px]` and `md:h-[450px]` will fix the panel size on desktop.
-    *   **Encapsulate Logic**: If positioning or sizing logic is complex or depends on application state (like the current route), encapsulate it in a dedicated utility function (e.g., `getChatbotPanelClasses` in `chatbotPosition.ts`) to keep component files clean and improve testability.
+    - **Define Base (Mobile) Styles**: For components like the chatbot panel that require dynamic sizing, define their default (mobile) width and height using flexible units and functions. For example, `w-[min(22rem,calc(100vw-1.5rem))]` for width and `h-[min(28rem,calc(100dvh-8rem))]` for height. The `min()` function ensures the panel doesn't exceed a maximum size, while `calc()` makes it relative to the viewport. Use `100dvh` for height to account for dynamic mobile browser UI.
+    - **Apply Breakpoint Overrides**: Use Tailwind's responsive prefixes (e.g., `md:`, `lg:`) to apply different styles for larger screens. For instance, `md:w-[350px]` and `md:h-[450px]` will fix the panel size on desktop.
+    - **Encapsulate Logic**: If positioning or sizing logic is complex or depends on application state (like the current route), encapsulate it in a dedicated utility function (e.g., `getChatbotPanelClasses` in `chatbotPosition.ts`) to keep component files clean and improve testability.
 
 3.  **Conditional UI Element Visibility**:
-    *   **Hide on Mobile**: Apply the `hidden` utility class to the element that should be hidden on small screens.
-    *   **Show on Larger Screens**: Use a responsive prefix with a display utility class (e.g., `md:flex`, `md:block`, `md:grid`) to make the element visible at a specific breakpoint. For example, `hidden md:flex` will hide an element on mobile and display it as a flex container on medium screens and up.
+    - **Hide on Mobile**: Apply the `hidden` utility class to the element that should be hidden on small screens.
+    - **Show on Larger Screens**: Use a responsive prefix with a display utility class (e.g., `md:flex`, `md:block`, `md:grid`) to make the element visible at a specific breakpoint. For example, `hidden md:flex` will hide an element on mobile and display it as a flex container on medium screens and up.
 
 4.  **Unit Testing for UI Logic**:
-    *   **Create/Update Tests**: For functions that generate dynamic CSS classes, write or update unit tests (e.g., using Vitest or Jest) to assert that the correct classes are returned under various conditions (different viewports, routes, etc.).
-    *   **Specific Assertions**: Ensure tests include specific assertions for the new responsive and conditional classes, verifying their presence or absence as expected.
+    - **Create/Update Tests**: For functions that generate dynamic CSS classes, write or update unit tests (e.g., using Vitest or Jest) to assert that the correct classes are returned under various conditions (different viewports, routes, etc.).
+    - **Specific Assertions**: Ensure tests include specific assertions for the new responsive and conditional classes, verifying their presence or absence as expected.
 
 ## Impact on System Architecture
 
@@ -90,16 +90,17 @@ This change primarily impacts the `apps/web` frontend architecture, specifically
 This change was verified through a combination of visual inspection and updated unit tests.
 
 1.  **Visual Inspection**:
-    *   The author provided screenshots demonstrating the AI Chatbot's improved responsiveness on mobile devices, showing correct spacing, alignment, and absence of overflow issues.
-    *   Screenshots also confirmed the successful implementation of dark mode, with the chatbot header, user messages, and action buttons correctly adopting darker color schemes.
-    *   The `TrustBar`'s conditional visibility was visually confirmed by checking its presence on desktop and absence on mobile viewports.
-    *   Manual testing involved resizing the browser window and toggling the system's dark/light mode settings to observe the UI's behavior.
+    - The author provided screenshots demonstrating the AI Chatbot's improved responsiveness on mobile devices, showing correct spacing, alignment, and absence of overflow issues.
+    - Screenshots also confirmed the successful implementation of dark mode, with the chatbot header, user messages, and action buttons correctly adopting darker color schemes.
+    - The `TrustBar`'s conditional visibility was visually confirmed by checking its presence on desktop and absence on mobile viewports.
+    - Manual testing involved resizing the browser window and toggling the system's dark/light mode settings to observe the UI's behavior.
 
 2.  **Unit Testing**:
-    *   The `apps/web/tests/chatbot-position.test.ts` file was updated to include specific assertions for the new responsive classes generated by `getChatbotPanelClasses`. This ensures that the dynamic sizing logic for the chatbot panel correctly applies the `w-[min(22rem,calc(100vw-1.5rem))]`, `h-[min(28rem,calc(100dvh-8rem))]`, `md:w-[350px]`, and `md:h-[450px]` classes, and that the old fixed `h-[450px]` is no longer present. This provides automated verification of the core positioning logic.
+    - The `apps/web/tests/chatbot-position.test.ts` file was updated to include specific assertions for the new responsive classes generated by `getChatbotPanelClasses`. This ensures that the dynamic sizing logic for the chatbot panel correctly applies the `w-[min(22rem,calc(100vw-1.5rem))]`, `h-[min(28rem,calc(100dvh-8rem))]`, `md:w-[350px]`, and `md:h-[450px]` classes, and that the old fixed `h-[450px]` is no longer present. This provides automated verification of the core positioning logic.
 
 **Edge Cases**:
-*   **Extreme Viewport Sizes**: While `min()` and `calc()` help, extremely narrow or short viewports might still present minor layout challenges, though the current implementation significantly improves upon previous behavior.
-*   **Browser Compatibility**: The use of `100dvh` is relatively modern; older browsers might fall back to `100vh` or behave inconsistently. However, SahiDawa targets modern browsers, so this is an acceptable risk.
-*   **User-defined Font Sizes**: Not documented in this PR.
-*   **Accessibility for High Contrast Modes**: Not documented in this PR.
+
+- **Extreme Viewport Sizes**: While `min()` and `calc()` help, extremely narrow or short viewports might still present minor layout challenges, though the current implementation significantly improves upon previous behavior.
+- **Browser Compatibility**: The use of `100dvh` is relatively modern; older browsers might fall back to `100vh` or behave inconsistently. However, SahiDawa targets modern browsers, so this is an acceptable risk.
+- **User-defined Font Sizes**: Not documented in this PR.
+- **Accessibility for High Contrast Modes**: Not documented in this PR.

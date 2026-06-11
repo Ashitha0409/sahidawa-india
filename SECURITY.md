@@ -4,10 +4,10 @@
 
 The following versions of SahiDawa currently receive security updates:
 
-| Version | Supported          |
-| ------- | ------------------ |
+| Version         | Supported         |
+| --------------- | ----------------- |
 | `main` (latest) | ✅ Active support |
-| Older branches  | ❌ No support      |
+| Older branches  | ❌ No support     |
 
 > SahiDawa is currently in active development (pre-release). We recommend always using the latest code from the `main` branch.
 
@@ -36,11 +36,11 @@ Please provide as much of the following as possible to help us understand and re
 
 ### What to Expect
 
-| Stage | Timeline |
-|-------|----------|
-| Initial acknowledgement | Within **48–72 hours** |
-| Status update | Within **7 days** |
-| Patch / resolution | Depends on severity (critical: ASAP, others: within 30 days) |
+| Stage                   | Timeline                                                     |
+| ----------------------- | ------------------------------------------------------------ |
+| Initial acknowledgement | Within **48–72 hours**                                       |
+| Status update           | Within **7 days**                                            |
+| Patch / resolution      | Depends on severity (critical: ASAP, others: within 30 days) |
 
 We will keep you informed throughout the process and credit you in the release notes (unless you prefer to remain anonymous).
 
@@ -98,4 +98,4 @@ For non-urgent security questions, you can also reach us on the [SahiDawa Discor
 
 ---
 
-*Thank you for helping keep SahiDawa safe for 1.4 billion Indians. 🇮🇳*
+_Thank you for helping keep SahiDawa safe for 1.4 billion Indians. 🇮🇳_

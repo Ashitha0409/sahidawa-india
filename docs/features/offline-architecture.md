@@ -97,6 +97,7 @@ Implements exponential backoff retry logic with jitter. Wraps all API calls
 for consistent retry behavior.
 
 **Features:**
+
 - Exponential backoff: $\text{delay} = \min(\text{initial} \times 2^{attempt}, \text{max})$
 - Jitter to prevent thundering herd: $\pm 10\%$ random variance
 - Configurable retry attempts (default: 3)
@@ -152,9 +153,9 @@ intercepting all requests and applying the appropriate caching strategy.
 ### Cache Names
 
 ```javascript
-const OFFLINE_CACHE_NAME = 'sahidawa-offline-v1';
-const API_CACHE_NAME     = 'sahidawa-api-v1';
-const STATIC_CACHE_NAME  = 'sahidawa-static-v1';
+const OFFLINE_CACHE_NAME = "sahidawa-offline-v1";
+const API_CACHE_NAME = "sahidawa-api-v1";
+const STATIC_CACHE_NAME = "sahidawa-static-v1";
 ```
 
 ### How Status Detection Works
@@ -162,8 +163,8 @@ const STATIC_CACHE_NAME  = 'sahidawa-static-v1';
 The app detects offline status via the browser's `online`/`offline` events:
 
 ```javascript
-window.addEventListener('online',  () => console.log('Back online!'));
-window.addEventListener('offline', () => console.log('Gone offline'));
+window.addEventListener("online", () => console.log("Back online!"));
+window.addEventListener("offline", () => console.log("Gone offline"));
 ```
 
 ---
@@ -207,16 +208,16 @@ Attempt 4: 4000ms + jitter (max 10000ms)
 
 ### Selective Retry
 
-| Status | Retried? |
-|---|---|
-| 5xx server errors | ✅ Yes |
-| Network errors | ✅ Yes |
-| Timeouts | ✅ Yes |
-| 429 Rate limit | ✅ Yes |
-| 400 Bad request | ❌ No |
-| 401 Unauthorized | ❌ No |
-| 403 Forbidden | ❌ No |
-| 404 Not found | ❌ No |
+| Status            | Retried? |
+| ----------------- | -------- |
+| 5xx server errors | ✅ Yes   |
+| Network errors    | ✅ Yes   |
+| Timeouts          | ✅ Yes   |
+| 429 Rate limit    | ✅ Yes   |
+| 400 Bad request   | ❌ No    |
+| 401 Unauthorized  | ❌ No    |
+| 403 Forbidden     | ❌ No    |
+| 404 Not found     | ❌ No    |
 
 ---
 
@@ -244,30 +245,30 @@ export function MyComponent() {
 ### Using Retry Logic for API Calls
 
 ```typescript
-import { fetchWithRetry } from '@/lib/apiWithRetry';
+import { fetchWithRetry } from "@/lib/apiWithRetry";
 
 async function verifyMedicine(barcode: string) {
-  // fetchWithRetry automatically:
-  // 1. Retries on network errors
-  // 2. Uses exponential backoff
-  // 3. Respects timeouts
+    // fetchWithRetry automatically:
+    // 1. Retries on network errors
+    // 2. Uses exponential backoff
+    // 3. Respects timeouts
 
-  const response = await fetchWithRetry(
-    `${API_BASE}/api/verify`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ barcode }),
-      timeout: 10000, // 10 second timeout
-    },
-    {
-      maxRetries: 3,
-      initialDelayMs: 1000,
-    }
-  );
+    const response = await fetchWithRetry(
+        `${API_BASE}/api/verify`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ barcode }),
+            timeout: 10000, // 10 second timeout
+        },
+        {
+            maxRetries: 3,
+            initialDelayMs: 1000,
+        }
+    );
 
-  if (!response.ok) throw new Error('Verification failed');
-  return response.json();
+    if (!response.ok) throw new Error("Verification failed");
+    return response.json();
 }
 ```
 
@@ -350,13 +351,13 @@ export function MedicineForm() {
 
 ```typescript
 try {
-  await verifyMedicine(barcode);
+    await verifyMedicine(barcode);
 } catch (error) {
-  if (error.message.includes('offline')) {
-    // Show cached data
-  } else {
-    // Show error to user
-  }
+    if (error.message.includes("offline")) {
+        // Show cached data
+    } else {
+        // Show error to user
+    }
 }
 ```
 
@@ -370,14 +371,14 @@ Modify retry behavior in `lib/apiWithRetry.ts`:
 
 ```typescript
 const DEFAULT_CONFIG: Required<RetryConfig> = {
-  maxRetries: 3,              // Max retry attempts
-  initialDelayMs: 1000,       // Initial backoff delay
-  maxDelayMs: 10000,          // Maximum backoff delay
-  backoffMultiplier: 2,       // Exponential multiplier
-  shouldRetry: (error, attempt) => {
-    // Custom retry logic
-    return attempt <= 3;
-  },
+    maxRetries: 3, // Max retry attempts
+    initialDelayMs: 1000, // Initial backoff delay
+    maxDelayMs: 10000, // Maximum backoff delay
+    backoffMultiplier: 2, // Exponential multiplier
+    shouldRetry: (error, attempt) => {
+        // Custom retry logic
+        return attempt <= 3;
+    },
 };
 ```
 
@@ -386,9 +387,9 @@ const DEFAULT_CONFIG: Required<RetryConfig> = {
 Modify service worker caching in `public/sw.js`:
 
 ```javascript
-const OFFLINE_CACHE_NAME = 'sahidawa-offline-v1';
-const API_CACHE_NAME     = 'sahidawa-api-v1';
-const STATIC_CACHE_NAME  = 'sahidawa-static-v1';
+const OFFLINE_CACHE_NAME = "sahidawa-offline-v1";
+const API_CACHE_NAME = "sahidawa-api-v1";
+const STATIC_CACHE_NAME = "sahidawa-static-v1";
 ```
 
 ---
@@ -487,8 +488,7 @@ clients to pick up the new service worker and evict stale cached responses.
 - Verify via console:
 
 ```typescript
-navigator.serviceWorker.getRegistrations()
-  .then(regs => console.log('SW Registrations:', regs));
+navigator.serviceWorker.getRegistrations().then((regs) => console.log("SW Registrations:", regs));
 ```
 
 ### Offline Banner Always Showing
@@ -520,11 +520,11 @@ Implement cache versioning — update the cache name constant in `public/sw.js`
 
 ### Cache Size Targets
 
-| Cache | Target Size |
-|---|---|
-| API Cache | ~5MB |
-| Static Cache | ~10MB (CSS, JS, images) |
-| Offline Pages | ~100KB |
+| Cache         | Target Size             |
+| ------------- | ----------------------- |
+| API Cache     | ~5MB                    |
+| Static Cache  | ~10MB (CSS, JS, images) |
+| Offline Pages | ~100KB                  |
 
 ### Network Behavior
 
@@ -561,24 +561,24 @@ Implement cache versioning — update the cache name constant in `public/sw.js`
 Offline messages support all 22 Indian languages via i18n translations.
 See [`messages/en.json`](../../messages/en.json) for the full translation keys.
 
-| Key | Purpose |
-|---|---|
-| `offline.bannerOffline` | Offline status banner |
-| `offline.descriptionOffline` | Offline description |
-| `offline.bannerOnline` | Online status banner |
-| `offline.descriptionOnline` | Reconnecting description |
-| `offline.dismiss` | Dismiss button |
+| Key                          | Purpose                  |
+| ---------------------------- | ------------------------ |
+| `offline.bannerOffline`      | Offline status banner    |
+| `offline.descriptionOffline` | Offline description      |
+| `offline.bannerOnline`       | Online status banner     |
+| `offline.descriptionOnline`  | Reconnecting description |
+| `offline.dismiss`            | Dismiss button           |
 
 ---
 
 ## Browser Support
 
-| Browser | Support |
-|---|---|
-| Chrome / Edge 60+ | ✅ Full support |
-| Firefox 55+ | ✅ Full support |
-| Safari 11.1+ | ✅ Full support |
-| IE 11 | ❌ Not supported |
+| Browser           | Support          |
+| ----------------- | ---------------- |
+| Chrome / Edge 60+ | ✅ Full support  |
+| Firefox 55+       | ✅ Full support  |
+| Safari 11.1+      | ✅ Full support  |
+| IE 11             | ❌ Not supported |
 
 ---
 
@@ -596,17 +596,17 @@ See [`messages/en.json`](../../messages/en.json) for the full translation keys.
 
 ## Related Files
 
-| File | Purpose |
-|---|---|
-| `lib/apiWithRetry.ts` | Fetch wrapper with retry logic |
-| `lib/api.ts` | API utility functions |
-| `hooks/useOfflineStatus.ts` | Offline detection hook |
-| `hooks/useOnlineRetry.ts` | Auto-retry on reconnect hook |
-| `components/OfflineBanner.tsx` | Connection status banner |
-| `components/OfflineErrorBoundary.tsx` | Error boundary for network errors |
-| `components/ServiceWorkerProvider.tsx` | Service worker registration |
-| `public/sw.js` | Service worker implementation |
-| `app/[locale]/offline/page.tsx` | Offline fallback page |
+| File                                   | Purpose                           |
+| -------------------------------------- | --------------------------------- |
+| `lib/apiWithRetry.ts`                  | Fetch wrapper with retry logic    |
+| `lib/api.ts`                           | API utility functions             |
+| `hooks/useOfflineStatus.ts`            | Offline detection hook            |
+| `hooks/useOnlineRetry.ts`              | Auto-retry on reconnect hook      |
+| `components/OfflineBanner.tsx`         | Connection status banner          |
+| `components/OfflineErrorBoundary.tsx`  | Error boundary for network errors |
+| `components/ServiceWorkerProvider.tsx` | Service worker registration       |
+| `public/sw.js`                         | Service worker implementation     |
+| `app/[locale]/offline/page.tsx`        | Offline fallback page             |
 
 ---
 
