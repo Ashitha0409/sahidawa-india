@@ -16,6 +16,7 @@ import {
     Camera,
     Clock,
     ShieldCheck,
+    Calendar,
 } from "lucide-react";
 import { Link, usePathname } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
@@ -203,6 +204,12 @@ export default function Navbar() {
                             <Clock size={14} /> {tNav("schedule")}
                         </Link>
                         <Link
+                            href="/my-medicines"
+                            className={`${desktopNavLinkClassName} flex items-center gap-1`}
+                        >
+                            <Calendar size={14} /> {tNav("my_medicines")}
+                        </Link>
+                        <Link
                             href="/reports/me"
                             className={`${desktopNavLinkClassName} flex items-center gap-1`}
                         >
@@ -297,6 +304,13 @@ export default function Navbar() {
                                                 className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
                                             >
                                                 <History size={14} /> {tNav("my_reports")}
+                                            </Link>
+                                            <Link
+                                                href="/my-medicines"
+                                                onClick={() => setIsMenuOpen(false)}
+                                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                                            >
+                                                <Calendar size={14} /> {tNav("my_medicines")}
                                             </Link>
                                             <Link
                                                 href="/schedule"

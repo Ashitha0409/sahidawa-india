@@ -395,3 +395,63 @@ export async function triggerRecallAlert(alert: RecallAlert) {
         payload,
     };
 }
+
+export async function sendExpiryReminder(
+    userId: string,
+    medicineName: string,
+    daysRemaining: number,
+    batchNumber?: string
+) {
+    const configured = configureWebPush();
+    if (!configured) {
+        logger.warn("Web push is not configured. Cannot send expiry reminder.");
+        return { success: false, error: "Not configured" };
+    }
+
+    const { data: subscriptions, error } = await supabase
+        .from("push_subscriptions")
+        .select("endpoint, subscription")
+        .eq("user_id", userId);
+
+    if (error || !subscriptions || subscriptions.length === 0) {
+        return { success: false, error: "No subscriptions found" };
+    }
+
+    const title = `Medicine Expiring Soon: ${medicineName}`;
+    const body = batchNumber
+        ? `Your medicine "${medicineName}" (Batch: ${batchNumber}) is expiring in ${daysRemaining} days. Please replace it.`
+        : `Your medicine "${medicineName}" is expiring in ${daysRemaining} days. Please replace it.`;
+
+    const payload = {
+        title,
+        body,
+        url: "/my-medicines",
+        medicineName,
+        daysRemaining,
+        batchNumber,
+    };
+
+    const results = await Promise.allSettled(
+        subscriptions.map((item) => {
+            const parsed = pushSubscriptionSchema.safeParse(item.subscription);
+            if (!parsed.success) return Promise.reject(new Error("Invalid subscription format"));
+            return webPush.sendNotification(parsed.data, JSON.stringify(payload));
+        })
+    );
+
+    const expiredEndpoints: string[] = [];
+    results.forEach((result, idx) => {
+        if (result.status === "rejected" && shouldRemovePushSubscription(result.reason)) {
+            expiredEndpoints.push(subscriptions[idx].endpoint);
+        }
+    });
+
+    if (expiredEndpoints.length > 0) {
+        await Promise.all(expiredEndpoints.map(removePushSubscription));
+    }
+
+    return {
+        success: true,
+        sent: results.filter((r) => r.status === "fulfilled").length,
+    };
+}

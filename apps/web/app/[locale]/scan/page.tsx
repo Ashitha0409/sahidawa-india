@@ -19,7 +19,9 @@ import {
     X,
     ScanLine,
     History,
+    Calendar,
 } from "lucide-react";
+import { TrackExpiryModal } from "@/components/ExpiryTracker";
 import { Link } from "@/i18n/routing";
 import { PageHeader } from "../components/PageHeader";
 import { toast } from "sonner";
@@ -502,6 +504,7 @@ export default function ScanPage() {
     const [copied, setCopied] = useState(false);
     const [batchInput, setBatchInput] = useState("");
     const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+    const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
     const [verifyError, setVerifyError] = useState<string | null>(null);
     const [ocrText, setOcrText] = useState<string | null>(null);
     const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
@@ -1304,6 +1307,46 @@ export default function ScanPage() {
                                         onShare={handleShare}
                                         shareLabel={tScan("share.button")}
                                     />
+                                )}
+
+                                {/* Track Expiry Section */}
+                                {verifyResult && (
+                                    <div className="mt-4 flex w-full max-w-sm flex-col items-center">
+                                        <button
+                                            onClick={() => setIsTrackModalOpen(true)}
+                                            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                        >
+                                            <Calendar className="h-4 w-4" />
+                                            <span>Track Expiry</span>
+                                        </button>
+                                        <TrackExpiryModal
+                                            isOpen={isTrackModalOpen}
+                                            onClose={() => setIsTrackModalOpen(false)}
+                                            initialMedicineName={
+                                                verifyResult.verified
+                                                    ? verifyResult.medicine.brand_name
+                                                    : parsedBrand
+                                            }
+                                            initialBatchNumber={
+                                                verifyResult.verified
+                                                    ? verifyResult.medicine.batch_number || ""
+                                                    : parsedBatch
+                                            }
+                                            initialExpiryDate={
+                                                verifyResult.verified
+                                                    ? verifyResult.medicine.expiry_date || ""
+                                                    : parsedExpiry
+                                            }
+                                            medicineId={
+                                                verifyResult.verified
+                                                    ? String(
+                                                          (verifyResult.medicine as any).id ||
+                                                              "manual"
+                                                      )
+                                                    : "manual"
+                                            }
+                                        />
+                                    </div>
                                 )}
                             </>
                         )}

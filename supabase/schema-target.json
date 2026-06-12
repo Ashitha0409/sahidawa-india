@@ -142,6 +142,26 @@
       ],
       "rls": false,
       "policies": []
+    },
+    "tracked_medicines": {
+      "columns": [
+        "id",
+        "user_id",
+        "session_id",
+        "medicine_id",
+        "medicine_name",
+        "batch_number",
+        "expiry_date",
+        "notified_7d",
+        "notified_14d",
+        "notified_30d",
+        "created_at"
+      ],
+      "rls": true,
+      "policies": [
+        "tracked_medicines_user_manage",
+        "tracked_medicines_service_access"
+      ]
     }
   }
 }

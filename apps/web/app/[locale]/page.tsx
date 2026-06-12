@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import SafetyStatsBanner from "@/components/SafetyStatsBanner";
 import { getVisibleAlertBatchNumber } from "@/lib/alertFormatting";
+import { fetchTrackedMedicines } from "@/lib/api/tracking";
 
 function formatRelativeTime(dateString: string | null): string {
     if (!dateString) return "Recent";
@@ -118,6 +119,31 @@ export default function SahiDawaHome() {
         fetchAlerts();
     }, []);
 
+    const [expiringSoonCount, setExpiringSoonCount] = useState<number>(0);
+
+    useEffect(() => {
+        async function fetchExpiringCount() {
+            try {
+                const data = await fetchTrackedMedicines();
+                if (data && data.length > 0) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const count = data.filter((med) => {
+                        const expiry = new Date(med.expiry_date);
+                        const diffDays = Math.ceil(
+                            (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+                        );
+                        return diffDays >= 0 && diffDays <= 30;
+                    }).length;
+                    setExpiringSoonCount(count);
+                }
+            } catch (err) {
+                console.error("Failed to fetch expiring medicines count", err);
+            }
+        }
+        fetchExpiringCount();
+    }, []);
+
     const handleNavigation = (path: string) => {
         router.push(`/${locale}/${path}`);
     };
@@ -158,6 +184,35 @@ export default function SahiDawaHome() {
                     </p>
                     {/*Safety Stats Banner*/}
                     <SafetyStatsBanner />
+
+                    {/* Expiry Warning Widget */}
+                    {expiringSoonCount > 0 && (
+                        <div className="animate-in fade-in slide-in-from-top-3 mx-auto mt-4 w-full max-w-2xl duration-300">
+                            <Link
+                                href="/my-medicines"
+                                className="flex items-center justify-between gap-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-left transition hover:bg-amber-500/15"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white">
+                                        <AlertTriangle size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                                            Medicines Expiring Soon
+                                        </p>
+                                        <p className="text-xs font-semibold text-amber-700/80 dark:text-amber-400/80">
+                                            You have {expiringSoonCount} medicine(s) expiring within
+                                            the next 30 days.
+                                        </p>
+                                    </div>
+                                </div>
+                                <ChevronRight
+                                    size={18}
+                                    className="shrink-0 text-amber-600 dark:text-amber-400"
+                                />
+                            </Link>
+                        </div>
+                    )}
 
                     {/* Search Bar */}
                     <div className="mx-auto w-full max-w-2xl pt-2">

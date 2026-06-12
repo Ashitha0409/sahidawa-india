@@ -14,6 +14,7 @@ import {
     removePushSubscription,
     savePushSubscription,
     triggerRecallAlert,
+    sendExpiryReminder,
 } from "../services/notifications";
 
 const router = Router();
@@ -654,6 +655,19 @@ router.post("/twilio-webhook", express.urlencoded({ extended: true }), async (re
         logger.error({ message: "Error in Twilio webhook", error: err });
         res.status(500).send("Internal server error");
     }
+});
+
+router.post("/expiry-reminder/trigger", requireAuth, async (req: AuthenticatedRequest, res) => {
+    const { medicineName, daysRemaining, batchNumber } = req.body;
+
+    if (!medicineName || typeof daysRemaining !== "number") {
+        res.status(400).json({ error: "medicineName and daysRemaining (number) are required" });
+        return;
+    }
+
+    const result = await sendExpiryReminder(req.user!.id, medicineName, daysRemaining, batchNumber);
+
+    res.json(result);
 });
 
 export default router;

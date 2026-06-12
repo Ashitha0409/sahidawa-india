@@ -61,6 +61,8 @@ import alertsRouter from "./routes/alerts";
 import lasaRouter from "./routes/lasa";
 import mlRouter from "./routes/ml";
 import triageRouter from "./routes/triage";
+import trackingRouter from "./routes/tracking";
+import { startExpiryCron } from "./cron/expiry-check";
 import { supabase } from "./db/client";
 import { createCorsOptions } from "./config/cors";
 import { errorHandler } from "./middleware/errorHandler";
@@ -220,6 +222,7 @@ app.use("/api/ml", mlRouter);
 app.use("/api/triage", triageRouter);
 app.use("/api/map", mapRouter);
 app.use("/api/schedules", medicineSchedulesRouter);
+app.use("/api/v1/medicines", trackingRouter);
 
 // ── Swagger UI Documentation (/api/docs) ──────────────────────────────────
 app.use(
@@ -248,5 +251,9 @@ app.get("/api/docs.json", (_req: Request, res: Response) => {
 
 // ── Error Management Middleware ────────────────────────────────────────────
 app.use(errorHandler);
+
+if (process.env.NODE_ENV !== "test") {
+    startExpiryCron();
+}
 
 export default app;
