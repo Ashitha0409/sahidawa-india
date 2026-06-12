@@ -26,7 +26,10 @@ function getOrCreateSessionId(): string {
     if (typeof window === "undefined") return "";
     let sessionId = localStorage.getItem("sahidawa_session_id");
     if (!sessionId) {
-        sessionId = "sess_" + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+        const array = new Uint8Array(16);
+        window.crypto.getRandomValues(array);
+        const randomStr = Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
+        sessionId = "sess_" + randomStr + Date.now().toString(36);
         localStorage.setItem("sahidawa_session_id", sessionId);
     }
     return sessionId;
